@@ -9,7 +9,6 @@
     handleEmailAuth
   } from '../../lib//utils/auth';
 
- console.log($currentPage);
 </script>
 
 <style>
