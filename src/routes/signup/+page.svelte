@@ -2,13 +2,13 @@
   import LogoColor from '../../components/LogoColor.svelte';
   import Button from '../../components/Button.svelte';
   import BackNav from "../../components/BackNav.svelte";
+  import { currentPage } from '$lib/stores/pageStore';
 
   import {
     handleSocialLogin,
     handleEmailAuth
   } from '../../lib//utils/auth';
 
-  // Removed unused imports
 </script>
 
 <style>
@@ -19,7 +19,7 @@
 
 <div class="flex flex-col mx-16">
   <div>
-    <BackNav></BackNav>
+    <BackNav pageName={$currentPage}></BackNav>
     <LogoColor/>
     <h1 class="text-center mb-16">Join a chat!</h1>
     <Button text="Facebook" bgColor="bg-dark-blue" on:click={() => handleSocialLogin('Facebook')}></Button>

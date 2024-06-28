@@ -5,6 +5,8 @@
     import BackNav from "../../../components/BackNav.svelte";
     import DatePicker from "../../../components/DatePicker.svelte";
     import { goto } from '$app/navigation';
+    import { currentPage } from '$lib/stores/pageStore';
+
 
     function navigateToSignup() {
         console.log("in function");
@@ -14,7 +16,7 @@
 
 <div class="flex items-center justify-center mx-16">
     <div class="w-full bg-color-white">
-        <BackNav></BackNav>
+        <BackNav pageName={$currentPage}></BackNav>
         <LogoColor/>
         <h1 class= "mb-16 text-center">Sign up</h1>
         <form class="flex flex-col">

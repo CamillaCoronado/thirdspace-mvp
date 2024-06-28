@@ -1,14 +1,14 @@
 <script lang="ts">
-    import { browser } from '$app/environment';
-    
-    function goBack() {
-      if (browser) {
-        window.history.back();
-      }
-    }
-    </script>
+ import { navigate } from '../lib/navigation';
 
-<button on:click={goBack} class="inline-block absolute top-[70px] left-[16px]">
+  export let pageName: string;
+
+  function handleClick() {
+    navigate(pageName, 'back');
+  }
+</script>
+
+<button on:click={handleClick} class="inline-block absolute top-[70px] left-[16px]">
     <img 
     src="../src/assets/back-nav.png" 
     alt="back-nav"

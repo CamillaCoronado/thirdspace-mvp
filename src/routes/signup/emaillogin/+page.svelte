@@ -4,6 +4,8 @@
     import LogoColor from "../../../components/LogoColor.svelte";
     import BackNav from "../../../components/BackNav.svelte";
     import { goto } from '$app/navigation';
+    import { currentPage } from '$lib/stores/pageStore';
+
 
     function navigateToSignin() {
         goto('/signup/emailsignup');
@@ -12,7 +14,7 @@
 
 <div class="flex items-center justify-center">
     <div class="w-full bg-color-white mx-16">
-        <BackNav></BackNav>
+        <BackNav pageName={$currentPage}></BackNav>
         <LogoColor/>
         <h1 class= "mb-16 text-center">Email log in</h1>
         <form>
