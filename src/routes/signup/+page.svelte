@@ -3,11 +3,8 @@
   import Button from '../../components/Button.svelte';
   import BackNav from "../../components/BackNav.svelte";
   import { currentPage } from '$lib/stores/pageStore';
-
-  import {
-    handleSocialLogin,
-    handleEmailAuth
-  } from '../../lib//utils/auth';
+  import {handleSocialLogin} from '../../lib/utils/auth';
+  import {navigateToAuthPage} from '../../lib/navigation';
 
 </script>
 
@@ -28,6 +25,6 @@
     on:click={() => handleSocialLogin('Apple')}>
       <span class="mr-2 text-2xl"></span> Continue with Apple
     </button>
-    <Button text="Email" bgColor="bg-dark-charcoal" on:click={handleEmailAuth}></Button>
+    <Button text="Email" bgColor="bg-dark-charcoal" on:click={navigateToAuthPage}></Button>
   </div>
 </div>

@@ -27,6 +27,7 @@ export function initiateAuth(action: 'CreateAccount' | 'SignIn') {
   authAction.set(action);
   authError.set(null);
   navigateTo('/signup');
+  console.log("action: " + action);
 }
 
 export async function handleEmailAuth(email: string, password: string) {
@@ -57,7 +58,7 @@ async function createAccountWithEmail(email: string, password: string): Promise<
 }
 
 export function getAuthAction(): 'CreateAccount' | 'SignIn' {
-  return (get(page).url.searchParams.get('action') as 'CreateAccount' | 'SignIn') || 'CreateAccount';
+  return get(authAction) || 'CreateAccount';
 }
 
 export function isCreateAccount(): boolean {
