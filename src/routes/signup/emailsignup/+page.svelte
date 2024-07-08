@@ -4,14 +4,8 @@
     import LogoColor from "../../../components/LogoColor.svelte";
     import BackNav from "../../../components/BackNav.svelte";
     import DatePicker from "../../../components/DatePicker.svelte";
-    import { goto } from '$app/navigation';
     import { currentPage } from '$lib/stores/pageStore';
-
-
-    function navigateToSignup() {
-        console.log("in function");
-        goto('/signup/emaillogin');
-    }
+    import { navigateTo } from '../../../lib/navigation';
 </script>
 
 <div class="flex items-center justify-center mx-16">
@@ -42,7 +36,7 @@
             placeholder="retype password"
             isRequired={true}>
         </TextInput>
-        <a href="/signup/emailsignup" on:click|preventDefault={navigateToSignup}>Already have an account? Log in</a>
+        <a href="/signup/emailsignup" on:click|preventDefault={() => navigateTo('EmailSignup')}>Already have an account? Log in</a>
         <div>
             <Button text="Create account" buttonType ="submit"></Button>
         </div>

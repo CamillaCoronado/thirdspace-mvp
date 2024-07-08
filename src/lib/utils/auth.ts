@@ -41,7 +41,7 @@ export async function handleEmailAuth(email: string, password: string) {
     } else {
       await createAccountWithEmail(email, password);
     }
-    navigateTo('/dashboard');
+    navigateTo('Dashboard');
   } catch (error: unknown) {
     authError.set(error instanceof Error ? error.message : String(error));
   } finally {

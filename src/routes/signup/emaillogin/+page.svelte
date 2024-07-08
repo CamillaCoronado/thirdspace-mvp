@@ -3,12 +3,15 @@
     import TextInput from "../../../components/TextInput.svelte";
     import LogoColor from "../../../components/LogoColor.svelte";
     import BackNav from "../../../components/BackNav.svelte";
-    import { goto } from '$app/navigation';
     import { currentPage } from '$lib/stores/pageStore';
+    import { navigateTo } from '../../../lib/navigation';
+	import { handleEmailAuth } from '$lib/utils/auth';
 
+    let email = '';
+    let password = '';
 
-    function navigateToSignin() {
-        goto('/signup/emailsignup');
+    function handleSubmit() {
+        handleEmailAuth(email, password);
     }
 </script>
 
@@ -17,24 +20,26 @@
         <BackNav pageName={$currentPage}></BackNav>
         <LogoColor/>
         <h1 class= "mb-16 text-center">Email log in</h1>
-        <form>
-            <TextInput 
-                name= "name"
-                type="text"
-                autocomplete="name"
-                placeholder="Name"
-                isRequired={true}>
-            </TextInput>
+        <form on:submit|preventDefault={handleSubmit}>
             <TextInput
                 name= "email"
                 type="email"
                 autocomplete="email"
                 placeholder="Email"
+                bind:value={email}
+                isRequired={true}>
+            </TextInput>
+            <TextInput 
+                name= "password"
+                type="password"
+                autocomplete="password"
+                placeholder="Password"
+                bind:value={password}
                 isRequired={true}>
             </TextInput>
             <div class="w-full flex justify-between">
-                <a href="#">Forgot password?</a>
-                <a href="/signup/emaillogin" on:click|preventDefault={navigateToSignin}>Create account</a>
+                <a href="">Forgot password?</a>
+                <a href="/signup/emaillogin" on:click|preventDefault={() => navigateTo('Signin')}>Create account</a>
             </div>
             <div>
                 <Button text="Log in" buttonType ="submit"></Button>
