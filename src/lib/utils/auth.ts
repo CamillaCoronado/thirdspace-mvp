@@ -54,7 +54,12 @@ async function signInWithEmail(email: string, password: string): Promise<void> {
 }
 
 async function createAccountWithEmail(email: string, password: string): Promise<void> {
-  await createUserWithEmailAndPassword(auth, email, password);
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    console.error("Firebase create account error:", error);
+    throw error;
+  }
 }
 
 export function getAuthAction(): 'CreateAccount' | 'SignIn' {
