@@ -13,7 +13,7 @@
     ];
 </script>
    
-<style>
+<style lang="postcss">
   input, select, label {
     @apply border-medium-gray border py-8 rounded text-left text-sm;
   }
