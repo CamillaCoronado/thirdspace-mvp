@@ -6,9 +6,15 @@
     import { currentPage } from '$lib/stores/pageStore';
     import { navigateTo } from '../../../lib/navigation';
 	import { handleEmailAuth } from '$lib/utils/auth';
+    import { onMount } from 'svelte';
+    import { setAuthAction } from '$lib/utils/auth';
 
     let email = '';
     let password = '';
+
+    onMount(() => {
+        setAuthAction('SignIn');
+    });
 
     function handleSubmit() {
         handleEmailAuth(email, password);
@@ -39,7 +45,7 @@
             </TextInput>
             <div class="w-full flex justify-between">
                 <a href="">Forgot password?</a>
-                <a href="/signup/emaillogin" on:click|preventDefault={() => navigateTo('Signin')}>Create account</a>
+                <a href="/signup/emailsignup" on:click|preventDefault={() => navigateTo('EmailSignup')}>Create account</a>
             </div>
             <div>
                 <Button text="Log in" buttonType ="submit"></Button>

@@ -6,11 +6,18 @@
     import DatePicker from "../../../components/DatePicker.svelte";
     import { currentPage } from '$lib/stores/pageStore';
     import { navigateTo } from '../../../lib/navigation';
-    import { handleEmailAuth } from '$lib/utils/auth';
+    import { onMount } from 'svelte';
+    import { setAuthAction,
+             handleEmailAuth
+     } from '$lib/utils/auth';
 
     let email = '';
     let password = '';
     let passwordVerification = '';
+
+    onMount(() => {
+        setAuthAction('CreateAccount');
+    });
 
     function handleSubmit() {
         handleEmailAuth(email, password);
@@ -48,7 +55,7 @@
             bind:value={passwordVerification}
             isRequired={true}>
         </TextInput>
-        <a href="/signup/emailsignup" on:click|preventDefault={() => navigateTo('EmailSignup')}>Already have an account? Log in</a>
+        <a href="/signup/emaillogin" on:click|preventDefault={() => navigateTo('EmailLogin')}>Already have an account? Log in</a>
         <div>
             <Button text="Create account" buttonType ="submit"></Button>
         </div>
