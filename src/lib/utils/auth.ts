@@ -44,6 +44,7 @@ export async function handleEmailAuth(email: string, password: string) {
     if (action === 'CreateAccount') {
       const { isValid, error } = customValidatePassword(password);
       if (!isValid) {
+        console.log("error !isValid: " + error);
         throw new Error(error);
       }
       
@@ -51,8 +52,10 @@ export async function handleEmailAuth(email: string, password: string) {
         await validatePassword(auth, password);
       } catch (error) {
         if (error instanceof FirebaseError) {
+          console.log("firebase Error: " + error);
           throw new Error(`Invalid password: ${error.message}`);
         }
+        console.log("rethrow Error: " + error);
         throw error;  // Re-throw if it's not a FirebaseError
       }
     }
