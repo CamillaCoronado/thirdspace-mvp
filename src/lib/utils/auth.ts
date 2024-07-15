@@ -9,133 +9,102 @@ import {
   OAuthProvider 
 } from 'firebase/auth';
 import { auth } from '$lib/utils/firebaseSetup';
-import { validatePassword } from 'firebase/auth';
-import { FirebaseError } from 'firebase/app';
-import zxcvbn from 'zxcvbn';
+import { customValidatePassword, displayError, validateEmail } from './form-utils';
+import type { Auth } from 'firebase/auth';
 
-const authAction = writable<'CreateAccount' | 'SignIn'>('CreateAccount');
+type AuthAction = 'CreateAccount' | 'SignIn';
+
+const authAction = writable<AuthAction>('CreateAccount');
 const authError = writable<string | null>(null);
 const authLoading = writable<boolean>(false);
 
-interface SocialLoginResult {
-  status: 'success' | 'failure';
-  user?: {
-    username: string;
-    email: string;
-  };
-}
-
-export function setAuthAction(action: 'CreateAccount' | 'SignIn') {
+export function setAuthAction(action: AuthAction) {
+  console.log('Setting auth action:', action);
   authAction.set(action);
 }
 
-export function initiateAuth(action: 'CreateAccount' | 'SignIn') {
+export function initiateAuth(action: AuthAction) {
+  console.log('Initiating auth:', action);
   authAction.set(action);
   authError.set(null);
   navigateTo('/signup');
 }
 
+export async function validateEmailAndPassword(email: string, password: string, action: AuthAction, auth: Auth): Promise<boolean> {
+  console.log('Validating email and password');
+  const isEmailValid = validateEmail(email);
+  const isPasswordValid = await customValidatePassword(password, auth, action);
+  return isEmailValid && isPasswordValid;
+}
+
 export async function handleEmailAuth(email: string, password: string) {
   const action = get(authAction);
+  console.log('Handling email auth:', action);
   authLoading.set(true);
   authError.set(null);
 
   try {
-    if (action === 'CreateAccount') {
-      const zxcvbnResult = zxcvbn(password);
-      if (zxcvbnResult.score < 3) {
-        throw new Error('Password is too weak.');
-      }
-    
-      try {
-        await validatePassword(auth, password);
-      } catch (error) {
-        if (error instanceof FirebaseError) {
-          throw new Error(`Invalid password: ${error.message}`);
-        }
-        throw error;
-      }
+    const isValid = await validateEmailAndPassword(email, password, action, auth);
+    if (!isValid) {
+      console.log('Validation failed');
+      return; // Exit early if validation fails
     }
 
     if (action === 'SignIn') {
-      await signInWithEmail(email, password);
+      console.log('Signing in');
+      await signInWithEmailAndPassword(auth, email, password);
     } else {
-      await createAccountWithEmail(email, password);
+      console.log('Creating account');
+      await createUserWithEmailAndPassword(auth, email, password);
     }
+
+    console.log('Auth successful, navigating to Dashboard');
     navigateTo('Dashboard');
-  } catch (error: unknown) {
-    authError.set(error instanceof Error ? error.message : String(error));
+  } catch (error) {
+    console.error('Auth error:', error);
+    handleError(error);
   } finally {
     authLoading.set(false);
   }
 }
 
-async function signInWithEmail(email: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(auth, email, password);
-}
-
-async function createAccountWithEmail(email: string, password: string): Promise<void> {
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    console.error("Firebase create account error:", error);
-    throw error;
-  }
-}
-
-export function getAuthAction(): 'CreateAccount' | 'SignIn' {
-  return get(authAction) || 'CreateAccount';
-}
-
-export function isCreateAccount(): boolean {
-  return getAuthAction() === 'CreateAccount';
+export function getAuthAction(): AuthAction {
+  return get(authAction);
 }
 
 export async function handleSocialLogin(platform: 'Facebook' | 'Google' | 'Apple') {
+  console.log('Handling social login:', platform);
   authLoading.set(true);
   authError.set(null);
 
   try {
-    const result = await socialLogin(platform);
-    if (result.status === 'success') {
-      navigateTo('Dashboard');
-    } else {
-      throw new Error(`${platform} login failed`);
-    }
+    await socialLogin(platform);
+    console.log('Social login successful, navigating to Dashboard');
+    navigateTo('Dashboard');
   } catch (error) {
-    authError.set(error instanceof Error ? error.message : String(error));
+    console.error('Social login error:', error);
+    handleError(error);
   } finally {
     authLoading.set(false);
   }
 }
 
-async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<SocialLoginResult> {
-  let provider;
-  switch (platform) {
-    case 'Google':
-      provider = new GoogleAuthProvider();
-      break;
-    case 'Facebook':
-      provider = new FacebookAuthProvider();
-      break;
-    case 'Apple':
-      provider = new OAuthProvider('apple.com');
-      break;
-  }
+async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<void> {
+  const providers = {
+    'Google': new GoogleAuthProvider(),
+    'Facebook': new FacebookAuthProvider(),
+    'Apple': new OAuthProvider('apple.com')
+  };
+  
+  const provider = providers[platform];
+  await signInWithPopup(auth, provider);
+}
 
-  try {
-    const result = await signInWithPopup(auth, provider);
-    return {
-      status: 'success',
-      user: {
-        username: result.user.displayName || '',
-        email: result.user.email || '',
-      }
-    };
-  } catch (error) {
-    console.error("Error during social login:", error);
-    return { status: 'failure' };
-  }
+function handleError(error: unknown): void {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.log('Handling error:', errorMessage);
+  authError.set(errorMessage);
+  displayError([{ inputName: 'form', message: errorMessage }]);
 }
 
 export function getAuthError(): string | null {
@@ -145,5 +114,3 @@ export function getAuthError(): string | null {
 export function isAuthLoading(): boolean {
   return get(authLoading);
 }
-
-

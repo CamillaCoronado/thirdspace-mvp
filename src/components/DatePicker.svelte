@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { months } from "../lib/utils/dateUtils"
     // Calculate the default date
     const today = new Date();
     const defaultDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
@@ -7,10 +8,6 @@
     let day = defaultDate.getDate();
     let year = defaultDate.getFullYear();
   
-    const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
 </script>
    
 <style lang="postcss">
@@ -36,5 +33,6 @@
       <label for="year">Year</label>
       <input type="number" id="year" bind:value={year} class="border-medium-gray border rounded p-8 text-left" />
     </div>
+    <div class="error-message"></div>
   </div>
   
