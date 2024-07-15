@@ -43,7 +43,7 @@ export async function handleEmailAuth(email: string, password: string) {
   try {
     if (action === 'CreateAccount') {
       const zxcvbnResult = zxcvbn(password);
-      if (zxcvbnResult.score < 3) { // Assuming score less than 3 is weak
+      if (zxcvbnResult.score < 3) {
         throw new Error('Password is too weak.');
       }
     
@@ -51,11 +51,9 @@ export async function handleEmailAuth(email: string, password: string) {
         await validatePassword(auth, password);
       } catch (error) {
         if (error instanceof FirebaseError) {
-          console.log("firebase Error: " + error);
           throw new Error(`Invalid password: ${error.message}`);
         }
-        console.log("rethrow Error: " + error);
-        throw error;  // Re-throw if it's not a FirebaseError
+        throw error;
       }
     }
 
