@@ -1,5 +1,4 @@
 import { get, writable } from 'svelte/store';
-import { page } from '$app/stores';
 import { navigateTo } from '../navigation';
 import {  
   createUserWithEmailAndPassword, 
@@ -10,6 +9,9 @@ import {
   OAuthProvider 
 } from 'firebase/auth';
 import { auth } from '$lib/utils/firebaseSetup';
+import { validatePassword } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
+import zxcvbn from 'zxcvbn';
 
 const authAction = writable<'CreateAccount' | 'SignIn'>('CreateAccount');
 const authError = writable<string | null>(null);
@@ -23,11 +25,14 @@ interface SocialLoginResult {
   };
 }
 
+export function setAuthAction(action: 'CreateAccount' | 'SignIn') {
+  authAction.set(action);
+}
+
 export function initiateAuth(action: 'CreateAccount' | 'SignIn') {
   authAction.set(action);
   authError.set(null);
   navigateTo('/signup');
-  console.log("action: " + action);
 }
 
 export async function handleEmailAuth(email: string, password: string) {
@@ -36,6 +41,22 @@ export async function handleEmailAuth(email: string, password: string) {
   authError.set(null);
 
   try {
+    if (action === 'CreateAccount') {
+      const zxcvbnResult = zxcvbn(password);
+      if (zxcvbnResult.score < 3) {
+        throw new Error('Password is too weak.');
+      }
+    
+      try {
+        await validatePassword(auth, password);
+      } catch (error) {
+        if (error instanceof FirebaseError) {
+          throw new Error(`Invalid password: ${error.message}`);
+        }
+        throw error;
+      }
+    }
+
     if (action === 'SignIn') {
       await signInWithEmail(email, password);
     } else {
@@ -76,7 +97,6 @@ export async function handleSocialLogin(platform: 'Facebook' | 'Google' | 'Apple
 
   try {
     const result = await socialLogin(platform);
-    console.log("Success: " + result);
     if (result.status === 'success') {
       navigateTo('Dashboard');
     } else {
