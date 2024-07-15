@@ -10,8 +10,8 @@ import {
 } from 'firebase/auth';
 import { auth } from '$lib/utils/firebaseSetup';
 import { validatePassword } from 'firebase/auth';
-import { customValidatePassword } from '$lib/utils/customPasswordValidation';
 import { FirebaseError } from 'firebase/app';
+import zxcvbn from 'zxcvbn';
 
 const authAction = writable<'CreateAccount' | 'SignIn'>('CreateAccount');
 const authError = writable<string | null>(null);
@@ -42,12 +42,11 @@ export async function handleEmailAuth(email: string, password: string) {
 
   try {
     if (action === 'CreateAccount') {
-      const { isValid, error } = customValidatePassword(password);
-      if (!isValid) {
-        console.log("error !isValid: " + error);
-        throw new Error(error);
+      const zxcvbnResult = zxcvbn(password);
+      if (zxcvbnResult.score < 3) { // Assuming score less than 3 is weak
+        throw new Error('Password is too weak.');
       }
-      
+    
       try {
         await validatePassword(auth, password);
       } catch (error) {
