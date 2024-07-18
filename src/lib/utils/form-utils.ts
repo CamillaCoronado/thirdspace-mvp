@@ -40,7 +40,7 @@ export function clearErrors(fieldNames: string[]): void {
       errorElement.classList.add('hidden');
     }
     
-    const inputFields = document.querySelectorAll('[data-input-name]');
+    const inputFields = document.querySelectorAll(`[data-input-name="${fieldName}"]`);
 
     inputFields.forEach((inputElement) => {
       inputElement.classList.remove('error');
@@ -93,24 +93,41 @@ export function validateEmail(email: string): boolean {
 }
 
 
-export async function customValidatePassword(password: string, auth: Auth, action: 'CreateAccount' | 'SignIn'): Promise<boolean> {
+export async function customValidatePassword(password: string, auth: Auth, action: 'CreateAccount' | 'SignIn', passwordVerification?: string): Promise<boolean> {
+  const errors: ErrorItem[] = [];
+
   if (action === 'CreateAccount') {
+    // Check if passwords match
+    if (passwordVerification) {
+      if (password !== passwordVerification) {
+        errors.push({ inputName: 'password', message: 'Passwords do not match.' });
+        errors.push({ inputName: 'password-verification', message: 'Passwords do not match.' });
+      }
+    }
+    
+
+    // Check password strength
     const zxcvbnResult = zxcvbn(password);
     if (zxcvbnResult.score < 3) {
-      displayError([{ inputName: 'password', message: 'Password is too weak. Please choose a stronger password.' }]);
-      return false;
+      errors.push({ inputName: 'password', message: 'Password is too weak. Please choose a stronger password.' });
     }
 
+    // Validate password with Firebase
     try {
       await validatePassword(auth, password);
     } catch (error) {
       if (error instanceof FirebaseError) {
-        displayError([{ inputName: 'password', message: `Invalid password: ${error.message}` }]);
+        errors.push({ inputName: 'password', message: `Invalid password: ${error.message}` });
       } else {
-        displayError([{ inputName: 'password', message: `An unexpected error occurred: ${(error as Error).message}` }]);
+        errors.push({ inputName: 'password', message: `An unexpected error occurred: ${(error as Error).message}` });
       }
-      return false;
     }
   }
+
+  if (errors.length > 0) {
+    displayError(errors);
+    return false;
+  }
+
   return true;
 }

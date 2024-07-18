@@ -77,7 +77,7 @@ h2 {
 }
 
 a {
-	@apply text-dark-pink underline mb-16 text-sm font-medium;
+	@apply text-medium-green underline mb-16 text-sm font-medium;
 }
 
 .error.error {
@@ -85,5 +85,5 @@ a {
 }
 
 .error-message {
-	@apply text-sm my-8;
+	@apply text-sm;
 }

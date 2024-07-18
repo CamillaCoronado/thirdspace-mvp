@@ -20,7 +20,7 @@
     });
 
     function handleSubmit() {
-        handleEmailAuth(email, password);
+        handleEmailAuth(email, passwordVerification, password);
     }
 </script>
 
@@ -50,8 +50,8 @@
                 isRequired={true}>
             </TextInput>
             <TextInput 
-                name= "password verification"
-                dataInputName= "password"
+                name= "passwordVerification"
+                dataInputName= "password-verification"
                 type="password"
                 autocomplete="password"
                 placeholder="retype password"

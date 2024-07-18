@@ -11,6 +11,7 @@
 
     let email = '';
     let password = '';
+    let passwordVerification = '';
 
     onMount(() => {
         setAuthAction('SignIn');

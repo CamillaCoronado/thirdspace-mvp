@@ -31,22 +31,22 @@ export function initiateAuth(action: AuthAction) {
   navigateTo('/signup');
 }
 
-export async function validateEmailAndPassword(email: string, password: string, action: AuthAction, auth: Auth): Promise<boolean> {
+export async function validateEmailAndPassword(email: string, password: string, action: AuthAction, auth: Auth, passwordVerification?: string): Promise<boolean> {
   console.log("validating email and password");
   const isEmailValid = validateEmail(email);
-  const isPasswordValid = await customValidatePassword(password, auth, action);
+  const isPasswordValid = await customValidatePassword(password, auth, action, passwordVerification);
   console.log();
   return isEmailValid && isPasswordValid;
 }
 
-export async function handleEmailAuth(email: string, password: string, month?: string, day?: number, year?: number) {
+export async function handleEmailAuth(email: string, password: string, passwordVerification?: string, month?: string, day?: number, year?: number) {
   console.log("handling email auth");
   const action = get(authAction);
   authLoading.set(true);
   authError.set(null);
 
   try {
-    const isValid = await validateEmailAndPassword(email, password, action, auth);
+    const isValid = await validateEmailAndPassword(email, password, action, auth, passwordVerification);
     if (!isValid) {
       return; // Exit early if validation fails
     }
@@ -66,7 +66,7 @@ export async function handleEmailAuth(email: string, password: string, month?: s
         const errorMessage = `Missing date information: ${missingFieldsStr}`;
         console.error(errorMessage);
         const inputName = get(currentInputName) || missingFields[0];
-        handleError(inputName, errorMessage);
+        handleError(new Error(errorMessage), inputName);
         return;
       }
 
@@ -122,9 +122,7 @@ async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<v
 }
 
 export function handleError(error: Error, inputName: string): void {
-  console.log("handling error: " + error);
-  const errorMessage = error ? error.message : String(error);
-  console.log("error message: " + error.message);  
+  const errorMessage = error ? error.message : String(error); 
   authError.set(errorMessage);
   displayError([{ inputName, message: errorMessage }]);
 }
