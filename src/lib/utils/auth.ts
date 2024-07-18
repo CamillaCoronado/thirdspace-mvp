@@ -32,12 +32,15 @@ export function initiateAuth(action: AuthAction) {
 }
 
 export async function validateEmailAndPassword(email: string, password: string, action: AuthAction, auth: Auth): Promise<boolean> {
+  console.log("validating email and password");
   const isEmailValid = validateEmail(email);
   const isPasswordValid = await customValidatePassword(password, auth, action);
+  console.log();
   return isEmailValid && isPasswordValid;
 }
 
 export async function handleEmailAuth(email: string, password: string, month?: string, day?: number, year?: number) {
+  console.log("handling email auth");
   const action = get(authAction);
   authLoading.set(true);
   authError.set(null);
@@ -79,9 +82,9 @@ export async function handleEmailAuth(email: string, password: string, month?: s
     if (success) {
       navigateTo('Dashboard');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Auth error:', error);
-    const inputName = get(currentInputName) || 'unknown';
+    const inputName: string = get(currentInputName) || 'unknown';
     handleError(error, inputName);
   } finally {
     authLoading.set(false);
@@ -93,17 +96,15 @@ export function getAuthAction(): AuthAction {
 }
 
 export async function handleSocialLogin(platform: 'Facebook' | 'Google' | 'Apple') {
-  console.log('Handling social login:', platform);
   authLoading.set(true);
   authError.set(null);
 
   try {
     await socialLogin(platform);
-    console.log('Social login successful, navigating to Dashboard');
     navigateTo('Dashboard');
-  } catch (error) {
+  } catch (error: any) {
     console.error('Social login error:', error);
-    handleError(error);
+    handleError(error, inputName);
   } finally {
     authLoading.set(false);
   }
@@ -120,9 +121,10 @@ async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<v
   await signInWithPopup(auth, provider);
 }
 
-export function handleError(error: unknown, inputName: string): void {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  console.log('Handling error:', errorMessage);
+export function handleError(error: Error, inputName: string): void {
+  console.log("handling error: " + error);
+  const errorMessage = error ? error.message : String(error);
+  console.log("error message: " + error.message);  
   authError.set(errorMessage);
   displayError([{ inputName, message: errorMessage }]);
 }
@@ -136,11 +138,9 @@ export function isAuthLoading(): boolean {
 }
 
 async function createAccount(email: string, password: string, month: string, day: number, year: number) {
-  console.log('Creating account function');
   
   const isDateValid = validateDateFields(month, day, year);
   if (!isDateValid) {
-    console.log('Date validation failed');
     return false;
   }
 

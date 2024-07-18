@@ -85,5 +85,5 @@ a {
 }
 
 .error-message {
-	@apply text-sm;
+	@apply text-sm my-8;
 }

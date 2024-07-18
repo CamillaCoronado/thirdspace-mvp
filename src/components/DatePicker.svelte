@@ -12,7 +12,10 @@
     let day = defaultDate.getDate();
     let year = defaultDate.getFullYear();
 
-  function handleDateChange() {
+  function handleDateChange(event: Event) {
+    if (event.target instanceof HTMLSelectElement) {
+      month = event.target.value;
+    }
     try {
       const result = validateDateFields(month, +day, +year);
       if (!result.isValid) {
@@ -21,7 +24,7 @@
       } else {
         clearErrors(['date']);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Date validation error:", error);
       handleError(error, "date");
     }
@@ -39,7 +42,7 @@
   <div class="flex flex-1 flex-col">
     <label for="month">Month</label>
     <select 
-      on:change={handleDateChange}
+      on:input={handleDateChange}
       id="month"
       bind:value={month}
       data-input-name="date">

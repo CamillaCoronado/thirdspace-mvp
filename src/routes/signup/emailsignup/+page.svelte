@@ -32,6 +32,7 @@
         <form on:submit|preventDefault={handleSubmit} class="flex flex-col">
             <TextInput
                 name= "email"
+                dataInputName= "email"
                 type="email"
                 autocomplete="email"
                 placeholder="Email"
@@ -41,6 +42,7 @@
             <DatePicker></DatePicker>
             <TextInput 
                 name= "password"
+                dataInputName= "password"
                 type="password"
                 autocomplete="password"
                 placeholder="password"
@@ -48,12 +50,13 @@
                 isRequired={true}>
             </TextInput>
             <TextInput 
-            name= "password verification"
-            type="password"
-            autocomplete="password"
-            placeholder="retype password"
-            bind:value={passwordVerification}
-            isRequired={true}>
+                name= "password verification"
+                dataInputName= "password"
+                type="password"
+                autocomplete="password"
+                placeholder="retype password"
+                bind:value={passwordVerification}
+                isRequired={true}>
         </TextInput>
         <a href="/signup/emaillogin" on:click|preventDefault={() => navigateTo('EmailLogin')}>Already have an account? Log in</a>
         <div>

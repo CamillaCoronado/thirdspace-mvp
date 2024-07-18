@@ -3,52 +3,7 @@ import { FirebaseError } from 'firebase/app';
 import zxcvbn from 'zxcvbn';
 import type { Auth } from 'firebase/auth';
 import { validatePassword } from 'firebase/auth';
-
-interface ErrorItem {
-  inputName: string;
-  message: string;
-}
-
-export function displayError(errors: ErrorItem[]): void {
-  console.log('Displaying errors:', errors);
-  errors.forEach(error => {
-    const formElements = document.querySelectorAll(`[data-input-name="${error.inputName}"]`);
-    console.log("error.inputName: " + error.inputName);
-    const errorMessage = document.querySelector(`[data-error-for="${error.inputName}"]`);
-
-    console.log('Form elements:', formElements);
-    console.log('Error message element:', errorMessage);
-
-    formElements.forEach((formElement) => {
-      if (formElement instanceof HTMLElement && errorMessage instanceof HTMLElement) {
-        formElement.classList.add('error');
-        errorMessage.textContent = error.message;
-        errorMessage.classList.add('error');
-      } else {
-        console.error(`Form element or error message element for "${error.inputName}" not found.`);
-      }
-    });
-    
-  });
-}
-
-
-export function clearErrors(fieldNames: string[]): void {
-  fieldNames.forEach(fieldName => {
-    // Clear error message
-    const errorElement = document.querySelector(`[name="${fieldName}"] + .error-message`) as HTMLElement | null;
-    if (errorElement) {
-      errorElement.textContent = '';
-      errorElement.classList.remove('text-dark-pink');
-    }
-
-    // Remove error styling from input
-    const inputElement = document.querySelector(`[name="${fieldName}"]`) as HTMLElement | null;
-    if (inputElement) {
-      inputElement.classList.remove('text-dark-pink');
-    }
-  });
-}
+import { handleError } from "./auth";
 
 interface ErrorItem {
   inputName: string;
@@ -60,37 +15,59 @@ interface ValidationResult {
   errors: ErrorItem[];
 }
 
+export function displayError(errors: ErrorItem[]): void {
+  errors.forEach(error => {
+    const formElements = document.querySelectorAll(`[data-input-name="${error.inputName}"]`);
+    const errorMessage = document.querySelector(`[data-error-for="${error.inputName}"]`);
+    formElements.forEach((formElement) => {
+      if (formElement instanceof HTMLElement && errorMessage instanceof HTMLElement) {
+        formElement.classList.add('error');
+        errorMessage.textContent = error.message;
+        errorMessage.classList.add('error');
+        errorMessage.classList.remove('hidden');
+      } else {
+        console.error(`Form element or error message element for "${error.inputName}" not found.`);
+      }
+    });
+    
+  });
+}
+
+export function clearErrors(fieldNames: string[]): void {
+  fieldNames.forEach(fieldName => {
+    const errorElement = document.querySelector(`[data-error-for="${fieldName}"]`) as HTMLElement | null;
+    if (errorElement) {
+      errorElement.classList.add('hidden');
+    }
+    
+    const inputFields = document.querySelectorAll('[data-input-name]');
+
+    inputFields.forEach((inputElement) => {
+      inputElement.classList.remove('error');
+    });
+  });
+}
+
 export function validateDateFields(month: string, day: number, year: number): ValidationResult {
   const errors: ErrorItem[] = [];
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
 
-  if (!months.includes(month)) {
-    errors.push({ inputName: 'month', message: 'Invalid month selected.' });
-  }
+  if (!months.includes(month)) errors.push({ inputName: 'month', message: 'Invalid month.' });
+  if (day < 1 || day > 31) errors.push({ inputName: 'day', message: 'Day must be 1-31.' });
+  if (year < 1900 || year > currentYear) errors.push({ inputName: 'year', message: `Year must be 1900-${currentYear}.` });
 
-  if (day < 1 || day > 31) {
-    errors.push({ inputName: 'day', message: 'Day must be between 1 and 31.' });
-  }
-
-  if (year < 1900 || year > currentYear) {
-    errors.push({ inputName: 'year', message: `Year must be between 1900 and ${currentYear}.` });
-  }
-
-  // Check if the person is at least 18 years old
   const birthDate = new Date(year, months.indexOf(month), day);
   const eighteenYearsAgo = new Date(currentDate);
   eighteenYearsAgo.setFullYear(currentDate.getFullYear() - 18);
+  
+  if (birthDate > eighteenYearsAgo) errors.push({ inputName: 'date', message: 'You must be at least 18 years old.' });
 
-  if (birthDate > eighteenYearsAgo) {
-    errors.push({ inputName: 'date', message: 'You must be at least 18 years old.' });
-  }
-
-  const isValid = errors.length === 0;
-  return { isValid, errors };
+  return { isValid: errors.length === 0, errors };
 }
 
 export function validateEmail(email: string): boolean {
+  console.log("validating email");
   const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,63}$/;
   const parts = email.split('@');
   const domainParts = parts.length === 2 ? parts[1].split('.') : [];
@@ -106,10 +83,12 @@ export function validateEmail(email: string): boolean {
     domainParts.length < 2 || 
     !validTLDs.includes(tld)
   ) {
-    displayError([{ inputName: 'email', message: 'Invalid email format' }]);
+    
+    handleError(new Error('Invalid email format'), 'email');
     return false;
   }
 
+  clearErrors(['email']);
   return true;
 }
 
