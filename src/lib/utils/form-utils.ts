@@ -12,55 +12,85 @@ interface ErrorItem {
 export function displayError(errors: ErrorItem[]): void {
   console.log('Displaying errors:', errors);
   errors.forEach(error => {
-    const formElement = document.querySelector(`[name="${error.inputName}"]`);
-    const errorMessage = formElement?.parentElement?.querySelector('.error-message');
+    const formElements = document.querySelectorAll(`[data-input-name="${error.inputName}"]`);
+    console.log("error.inputName: " + error.inputName);
+    const errorMessage = document.querySelector(`[data-error-for="${error.inputName}"]`);
 
-    console.log(`For input ${error.inputName}:`, { formElement, errorMessage });
+    console.log('Form elements:', formElements);
+    console.log('Error message element:', errorMessage);
 
-    if (formElement instanceof HTMLElement && errorMessage instanceof HTMLElement) {
-      formElement.classList.add('text-dark-pink');
-      errorMessage.textContent = error.message;
-      errorMessage.classList.add('text-dark-pink');
-      console.log(`Error displayed for ${error.inputName}`);
-    } else {
-      console.log(`Failed to display error for ${error.inputName}`);
+    formElements.forEach((formElement) => {
+      if (formElement instanceof HTMLElement && errorMessage instanceof HTMLElement) {
+        formElement.classList.add('error');
+        errorMessage.textContent = error.message;
+        errorMessage.classList.add('error');
+      } else {
+        console.error(`Form element or error message element for "${error.inputName}" not found.`);
+      }
+    });
+    
+  });
+}
+
+
+export function clearErrors(fieldNames: string[]): void {
+  fieldNames.forEach(fieldName => {
+    // Clear error message
+    const errorElement = document.querySelector(`[name="${fieldName}"] + .error-message`) as HTMLElement | null;
+    if (errorElement) {
+      errorElement.textContent = '';
+      errorElement.classList.remove('text-dark-pink');
+    }
+
+    // Remove error styling from input
+    const inputElement = document.querySelector(`[name="${fieldName}"]`) as HTMLElement | null;
+    if (inputElement) {
+      inputElement.classList.remove('text-dark-pink');
     }
   });
 }
 
-export function validateDateFields(month: string, day: number, year: number): boolean {
-  console.log('Validating date fields:', { month, day, year });
+interface ErrorItem {
+  inputName: string;
+  message: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: ErrorItem[];
+}
+
+export function validateDateFields(month: string, day: number, year: number): ValidationResult {
   const errors: ErrorItem[] = [];
-  const currentYear = new Date().getFullYear();
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
 
   if (!months.includes(month)) {
-    console.log('Invalid month');
     errors.push({ inputName: 'month', message: 'Invalid month selected.' });
   }
 
   if (day < 1 || day > 31) {
-    console.log('Invalid day');
     errors.push({ inputName: 'day', message: 'Day must be between 1 and 31.' });
   }
 
-  if (year < 1900 || year > currentYear - 18) {
-    console.log('Invalid year');
-    errors.push({ inputName: 'year', message: `Year must be between 1900 and ${currentYear - 18}.` });
+  if (year < 1900 || year > currentYear) {
+    errors.push({ inputName: 'year', message: `Year must be between 1900 and ${currentYear}.` });
   }
 
-  if (errors.length > 0) {
-    console.log('Date validation failed');
-    displayError(errors);
-    return false;
+  // Check if the person is at least 18 years old
+  const birthDate = new Date(year, months.indexOf(month), day);
+  const eighteenYearsAgo = new Date(currentDate);
+  eighteenYearsAgo.setFullYear(currentDate.getFullYear() - 18);
+
+  if (birthDate > eighteenYearsAgo) {
+    errors.push({ inputName: 'date', message: 'You must be at least 18 years old.' });
   }
 
-  console.log('Date validation passed');
-  return true;
+  const isValid = errors.length === 0;
+  return { isValid, errors };
 }
 
 export function validateEmail(email: string): boolean {
-  console.log('Validating email:', email);
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,63}$/;
   const parts = email.split('@');
   const domainParts = parts.length === 2 ? parts[1].split('.') : [];
@@ -76,33 +106,25 @@ export function validateEmail(email: string): boolean {
     domainParts.length < 2 || 
     !validTLDs.includes(tld)
   ) {
-    console.log('Email validation failed');
     displayError([{ inputName: 'email', message: 'Invalid email format' }]);
     return false;
   }
 
-  console.log('Email validation passed');
   return true;
 }
 
 
 export async function customValidatePassword(password: string, auth: Auth, action: 'CreateAccount' | 'SignIn'): Promise<boolean> {
-  console.log('Validating password for action:', action);
   if (action === 'CreateAccount') {
     const zxcvbnResult = zxcvbn(password);
-    console.log('zxcvbn score:', zxcvbnResult.score);
     if (zxcvbnResult.score < 3) {
-      console.log('Password too weak');
       displayError([{ inputName: 'password', message: 'Password is too weak. Please choose a stronger password.' }]);
       return false;
     }
 
     try {
-      console.log('Validating password with Firebase');
       await validatePassword(auth, password);
-      console.log('Firebase password validation passed');
     } catch (error) {
-      console.log('Firebase password validation failed:', error);
       if (error instanceof FirebaseError) {
         displayError([{ inputName: 'password', message: `Invalid password: ${error.message}` }]);
       } else {
@@ -111,6 +133,5 @@ export async function customValidatePassword(password: string, auth: Auth, actio
       return false;
     }
   }
-  console.log('Password validation passed');
   return true;
 }

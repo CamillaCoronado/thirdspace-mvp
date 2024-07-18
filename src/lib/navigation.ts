@@ -4,7 +4,7 @@ import { navigationMap } from './navigationMap';
 import { getAuthAction } from './utils/auth';
 
 export function navigateTo(pageOrPath: string) {
-  console.log("naviagte to " + [pageOrPath]);
+  console.log("navigate to " + [pageOrPath]);
   const path = navigationMap[pageOrPath]?.path || pageOrPath;
   goto(path);
 }

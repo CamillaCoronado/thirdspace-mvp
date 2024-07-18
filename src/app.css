@@ -79,3 +79,11 @@ h2 {
 a {
 	@apply text-dark-pink underline mb-16 text-sm font-medium;
 }
+
+.error.error {
+	@apply text-dark-pink border-dark-pink;
+}
+
+.error-message {
+	@apply text-sm;
+}
