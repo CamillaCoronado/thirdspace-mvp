@@ -35,16 +35,14 @@ export async function validateEmailAndPassword(email: string, password: string, 
   console.log("validating email and password");
   const isEmailValid = validateEmail(email);
   const isPasswordValid = await customValidatePassword(password, auth, action, passwordVerification);
-  console.log();
   return isEmailValid && isPasswordValid;
 }
 
 export async function handleEmailAuth(email: string, password: string, passwordVerification?: string, month?: string, day?: number, year?: number) {
-  console.log("handling email auth");
   const action = get(authAction);
   authLoading.set(true);
   authError.set(null);
-
+  console.log(month, day, year);
   try {
     const isValid = await validateEmailAndPassword(email, password, action, auth, passwordVerification);
     if (!isValid) {

@@ -17,7 +17,7 @@ interface ValidationResult {
 
 export function displayError(errors: ErrorItem[]): void {
   errors.forEach(error => {
-    console.log(error.inputName);
+    console.log("error.inputName: " + error.inputName);
     const formElements = document.querySelectorAll(`[data-input-name="${error.inputName}"]`);
     const errorMessage = document.querySelector(`[data-error-for="${error.inputName}"]`);
     formElements.forEach((formElement) => {

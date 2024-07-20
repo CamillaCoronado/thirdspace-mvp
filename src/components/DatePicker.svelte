@@ -8,9 +8,9 @@
     const today = new Date();
     const defaultDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
   
-    let month = defaultDate.toLocaleString('default', { month: 'long' });
-    let day = defaultDate.getDate();
-    let year = defaultDate.getFullYear();
+    export let month = defaultDate.toLocaleString('default', { month: 'long' });
+    export let day = defaultDate.getDate();
+    export let year = defaultDate.getFullYear();
 
   function handleDateChange(event: Event) {
     if (event.target instanceof HTMLSelectElement) {
@@ -54,7 +54,7 @@
   <div class="flex flex-0.5 px-8 flex-col">
     <label for="day">Day</label>
     <input 
-      on:change={handleDateChange} 
+      on:input={handleDateChange} 
       type="number" id="day" 
       data-input-name="date" 
       min="1" 
@@ -64,7 +64,7 @@
   <div class="flex flex-1 flex-col">
     <label for="year">Year</label>
     <input 
-      on:change={handleDateChange}
+      on:input={handleDateChange}
       type="number" id="year"
       data-input-name="date"
       bind:value={year} />

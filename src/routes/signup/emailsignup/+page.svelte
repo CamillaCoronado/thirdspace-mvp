@@ -3,24 +3,27 @@
     import TextInput from "../../../components/TextInput.svelte";
     import LogoColor from "../../../components/LogoColor.svelte";
     import BackNav from "../../../components/BackNav.svelte";
-    import DatePicker from "../../../components/DatePicker.svelte";
     import { currentPage } from '$lib/stores/pageStore';
     import { navigateTo } from '../../../lib/navigation';
     import { onMount } from 'svelte';
     import { setAuthAction,
              handleEmailAuth
      } from '$lib/utils/auth';
+     import DatePicker from '../../../components/DatePicker.svelte';
 
     let email = '';
     let password = '';
     let passwordVerification = '';
+    let month: string;
+    let day: number;
+    let year: number;
 
     onMount(() => {
         setAuthAction('CreateAccount');
     });
 
     function handleSubmit() {
-        handleEmailAuth(email, password, passwordVerification);
+        handleEmailAuth(email, password, passwordVerification, month, day, year);
     }
 </script>
 
@@ -39,7 +42,11 @@
                 bind:value={email}
                 isRequired={true}>
             </TextInput>
-            <DatePicker></DatePicker>
+            <DatePicker
+                bind:month={month}
+                bind:day={day}
+                bind:year={year}>
+            </DatePicker>
             <TextInput 
                 name= "password"
                 dataInputName= "password"
