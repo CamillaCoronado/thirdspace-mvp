@@ -69,6 +69,6 @@
       data-input-name="date"
       bind:value={year} />
   </div>
-  <div class="error-message" data-error-for="date"></div>
 </div>
+<div class="error-message" data-error-for="date"></div>
   

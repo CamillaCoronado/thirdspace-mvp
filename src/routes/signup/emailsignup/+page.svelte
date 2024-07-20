@@ -20,7 +20,7 @@
     });
 
     function handleSubmit() {
-        handleEmailAuth(email, passwordVerification, password);
+        handleEmailAuth(email, password, passwordVerification);
     }
 </script>
 

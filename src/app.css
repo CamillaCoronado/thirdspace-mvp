@@ -86,4 +86,6 @@ a {
 
 .error-message {
 	@apply text-sm;
+	position: relative;
+	bottom:12px;
 }

@@ -17,6 +17,7 @@ interface ValidationResult {
 
 export function displayError(errors: ErrorItem[]): void {
   errors.forEach(error => {
+    console.log(error.inputName);
     const formElements = document.querySelectorAll(`[data-input-name="${error.inputName}"]`);
     const errorMessage = document.querySelector(`[data-error-for="${error.inputName}"]`);
     formElements.forEach((formElement) => {
@@ -26,6 +27,7 @@ export function displayError(errors: ErrorItem[]): void {
         errorMessage.classList.add('error');
         errorMessage.classList.remove('hidden');
       } else {
+        console.log("else");
         console.error(`Form element or error message element for "${error.inputName}" not found.`);
       }
     });
@@ -34,9 +36,11 @@ export function displayError(errors: ErrorItem[]): void {
 }
 
 export function clearErrors(fieldNames: string[]): void {
+  console.log("clearing errors");;
   fieldNames.forEach(fieldName => {
     const errorElement = document.querySelector(`[data-error-for="${fieldName}"]`) as HTMLElement | null;
     if (errorElement) {
+      console.log(errorElement);
       errorElement.classList.add('hidden');
     }
     
@@ -93,41 +97,50 @@ export function validateEmail(email: string): boolean {
 }
 
 
-export async function customValidatePassword(password: string, auth: Auth, action: 'CreateAccount' | 'SignIn', passwordVerification?: string): Promise<boolean> {
-  const errors: ErrorItem[] = [];
+async function validatePasswordStrength(auth: Auth, password: string): Promise<boolean> {
+  console.log("Validating password strength and Firebase compatibility");
 
-  if (action === 'CreateAccount') {
-    // Check if passwords match
-    if (passwordVerification) {
-      if (password !== passwordVerification) {
-        errors.push({ inputName: 'password', message: 'Passwords do not match.' });
-        errors.push({ inputName: 'password-verification', message: 'Passwords do not match.' });
-      }
-    }
-    
-
-    // Check password strength
-    const zxcvbnResult = zxcvbn(password);
-    if (zxcvbnResult.score < 3) {
-      errors.push({ inputName: 'password', message: 'Password is too weak. Please choose a stronger password.' });
-    }
-
-    // Validate password with Firebase
-    try {
-      await validatePassword(auth, password);
-    } catch (error) {
-      if (error instanceof FirebaseError) {
-        errors.push({ inputName: 'password', message: `Invalid password: ${error.message}` });
-      } else {
-        errors.push({ inputName: 'password', message: `An unexpected error occurred: ${(error as Error).message}` });
-      }
-    }
-  }
-
-  if (errors.length > 0) {
-    displayError(errors);
+  // Check password strength
+  if (zxcvbn(password).score < 3) {
+    displayError([{ inputName: 'password', message: 'Password is too weak. Please choose a stronger password.' }]);
     return false;
   }
 
+  // Validate with Firebase
+  try {
+    await validatePassword(auth, password);
+    clearErrors(['password']);
+    return true;
+  } catch (error) {
+    const message = error instanceof FirebaseError
+      ? `Invalid password: ${error.message}`
+      : `An unexpected error occurred: ${(error as Error).message}`;
+    displayError([{ inputName: 'password', message }]);
+    return false;
+  }
+}
+
+function validatePasswordMatch(password: string, passwordVerification: string): boolean {
+  if (password !== passwordVerification) {
+    displayError([{ inputName: 'password-verification', message: 'Passwords do not match.' }]);
+    return false;
+  }
+  clearErrors(['password-verification']);
   return true;
+}
+
+export async function customValidatePassword(
+  password: string, 
+  auth: Auth, 
+  action: 'CreateAccount' | 'SignIn', 
+  passwordVerification?: string
+): Promise<boolean> {
+  if (action !== 'CreateAccount') return true;
+
+  const passwordValid = await validatePasswordStrength(auth, password);
+  const matchValid = passwordVerification ? validatePasswordMatch(password, passwordVerification) : true;
+
+  if (!passwordValid) return false;
+
+  return matchValid;
 }
