@@ -1,11 +1,11 @@
 const firebaseDevConfig = {
-  apiKey: "AIzaSyDzwuDZjeIHb93qOHJ1AuWC1S0nDw7Ik58",
-  authDomain: "thirdplace-development-97a9a.firebaseapp.com",
-  projectId: "thirdplace-development-97a9a",
-  storageBucket: "thirdplace-development-97a9a.appspot.com",
-  messagingSenderId: "736373704408",
-  appId: "1:736373704408:web:2702ea282bf40fa5a3f9ad",
-  measurementId: "G-QNGDHFKK39"
+  apiKey: "AIzaSyAhGVLXefxyUP6dm8kAppKcBAEZ5isGYwI",
+  authDomain: "app-development-a54df.firebaseapp.com",
+  projectId: "app-development-a54df",
+  storageBucket: "app-development-a54df.appspot.com",
+  messagingSenderId: "920934360056",
+  appId: "1:920934360056:web:ba48430018bef010caec0d",
+  measurementId: "G-RGKV1FLVF7"
 };
 
 export default firebaseDevConfig;
