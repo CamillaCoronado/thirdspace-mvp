@@ -3,24 +3,27 @@
     import TextInput from "../../../components/TextInput.svelte";
     import LogoColor from "../../../components/LogoColor.svelte";
     import BackNav from "../../../components/BackNav.svelte";
-    import DatePicker from "../../../components/DatePicker.svelte";
     import { currentPage } from '$lib/stores/pageStore';
     import { navigateTo } from '../../../lib/navigation';
     import { onMount } from 'svelte';
     import { setAuthAction,
              handleEmailAuth
      } from '$lib/utils/auth';
+     import DatePicker from '../../../components/DatePicker.svelte';
 
     let email = '';
     let password = '';
     let passwordVerification = '';
+    let month: string;
+    let day: number;
+    let year: number;
 
     onMount(() => {
         setAuthAction('CreateAccount');
     });
 
     function handleSubmit() {
-        handleEmailAuth(email, password);
+        handleEmailAuth(email, password, passwordVerification, month, day, year);
     }
 </script>
 
@@ -32,15 +35,21 @@
         <form on:submit|preventDefault={handleSubmit} class="flex flex-col">
             <TextInput
                 name= "email"
+                dataInputName= "email"
                 type="email"
                 autocomplete="email"
                 placeholder="Email"
                 bind:value={email}
                 isRequired={true}>
             </TextInput>
-            <DatePicker></DatePicker>
+            <DatePicker
+                bind:month={month}
+                bind:day={day}
+                bind:year={year}>
+            </DatePicker>
             <TextInput 
                 name= "password"
+                dataInputName= "password"
                 type="password"
                 autocomplete="password"
                 placeholder="password"
@@ -48,12 +57,13 @@
                 isRequired={true}>
             </TextInput>
             <TextInput 
-            name= "password verification"
-            type="password"
-            autocomplete="password"
-            placeholder="retype password"
-            bind:value={passwordVerification}
-            isRequired={true}>
+                name= "passwordVerification"
+                dataInputName= "password-verification"
+                type="password"
+                autocomplete="password"
+                placeholder="retype password"
+                bind:value={passwordVerification}
+                isRequired={true}>
         </TextInput>
         <a href="/signup/emaillogin" on:click|preventDefault={() => navigateTo('EmailLogin')}>Already have an account? Log in</a>
         <div>

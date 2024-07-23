@@ -9,86 +9,88 @@ import {
   OAuthProvider 
 } from 'firebase/auth';
 import { auth } from '$lib/utils/firebaseSetup';
-import { validatePassword } from 'firebase/auth';
-import { FirebaseError } from 'firebase/app';
-import zxcvbn from 'zxcvbn';
+import { customValidatePassword, displayError, validateEmail } from './form-utils';
+import type { Auth } from 'firebase/auth';
+import { validateDateFields } from '$lib/utils/form-utils';
 
-const authAction = writable<'CreateAccount' | 'SignIn'>('CreateAccount');
+export const currentInputName = writable<string | null>(null);
+
+type AuthAction = 'CreateAccount' | 'SignIn';
+
+const authAction = writable<AuthAction>('CreateAccount');
 const authError = writable<string | null>(null);
 const authLoading = writable<boolean>(false);
 
-interface SocialLoginResult {
-  status: 'success' | 'failure';
-  user?: {
-    username: string;
-    email: string;
-  };
-}
-
-export function setAuthAction(action: 'CreateAccount' | 'SignIn') {
+export function setAuthAction(action: AuthAction) {
   authAction.set(action);
 }
 
-export function initiateAuth(action: 'CreateAccount' | 'SignIn') {
+export function initiateAuth(action: AuthAction) {
   authAction.set(action);
   authError.set(null);
   navigateTo('/signup');
 }
 
-export async function handleEmailAuth(email: string, password: string) {
+export async function validateEmailAndPassword(email: string, password: string, action: AuthAction, auth: Auth, passwordVerification?: string): Promise<boolean> {
+  console.log("validating email and password");
+  const isEmailValid = validateEmail(email);
+  const isPasswordValid = await customValidatePassword(password, auth, action, passwordVerification);
+  return isEmailValid && isPasswordValid;
+}
+
+export async function handleEmailAuth(email: string, password: string, passwordVerification?: string, month?: string, day?: number, year?: number) {
   const action = get(authAction);
   authLoading.set(true);
   authError.set(null);
-
+  console.log(month, day, year);
   try {
-    if (action === 'CreateAccount') {
-      const zxcvbnResult = zxcvbn(password);
-      if (zxcvbnResult.score < 3) {
-        throw new Error('Password is too weak.');
-      }
-    
-      try {
-        await validatePassword(auth, password);
-      } catch (error) {
-        if (error instanceof FirebaseError) {
-          throw new Error(`Invalid password: ${error.message}`);
-        }
-        throw error;
-      }
+    const isValid = await validateEmailAndPassword(email, password, action, auth, passwordVerification);
+    if (!isValid) {
+      return; // Exit early if validation fails
     }
 
+    let success = false;
     if (action === 'SignIn') {
-      await signInWithEmail(email, password);
+      await signInWithEmailAndPassword(auth, email, password);
+      success = true;
     } else {
-      await createAccountWithEmail(email, password);
+      const missingFields = [];
+      if (!month) missingFields.push('month');
+      if (!day) missingFields.push('day');
+      if (!year) missingFields.push('year');
+
+      if (missingFields.length > 0) {
+        const missingFieldsStr = missingFields.join(', ');
+        const errorMessage = `Missing date information: ${missingFieldsStr}`;
+        console.error(errorMessage);
+        const inputName = get(currentInputName) || missingFields[0];
+        handleError(new Error(errorMessage), inputName);
+        return;
+      }
+
+      success = await createAccount(
+        email, 
+        password, 
+        month ?? '', 
+        day ?? 1, 
+        year ?? new Date().getFullYear()
+      );
     }
-    navigateTo('Dashboard');
-  } catch (error: unknown) {
-    authError.set(error instanceof Error ? error.message : String(error));
+
+    if (success) {
+      navigateTo('Dashboard');
+    }
+  } catch (error: any) {
+    console.error('Auth error:', error);
+    const inputName: string = get(currentInputName) || 'unknown';
+    handleError(error, inputName);
   } finally {
     authLoading.set(false);
   }
 }
 
-async function signInWithEmail(email: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(auth, email, password);
-}
-
-async function createAccountWithEmail(email: string, password: string): Promise<void> {
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-  } catch (error) {
-    console.error("Firebase create account error:", error);
-    throw error;
-  }
-}
-
-export function getAuthAction(): 'CreateAccount' | 'SignIn' {
-  return get(authAction) || 'CreateAccount';
-}
-
-export function isCreateAccount(): boolean {
-  return getAuthAction() === 'CreateAccount';
+export function getAuthAction(): AuthAction {
+  return get(authAction);
 }
 
 export async function handleSocialLogin(platform: 'Facebook' | 'Google' | 'Apple') {
@@ -96,46 +98,31 @@ export async function handleSocialLogin(platform: 'Facebook' | 'Google' | 'Apple
   authError.set(null);
 
   try {
-    const result = await socialLogin(platform);
-    if (result.status === 'success') {
-      navigateTo('Dashboard');
-    } else {
-      throw new Error(`${platform} login failed`);
-    }
-  } catch (error) {
-    authError.set(error instanceof Error ? error.message : String(error));
+    await socialLogin(platform);
+    navigateTo('Dashboard');
+  } catch (error: any) {
+    console.error('Social login error:', error);
+    handleError(error, inputName);
   } finally {
     authLoading.set(false);
   }
 }
 
-async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<SocialLoginResult> {
-  let provider;
-  switch (platform) {
-    case 'Google':
-      provider = new GoogleAuthProvider();
-      break;
-    case 'Facebook':
-      provider = new FacebookAuthProvider();
-      break;
-    case 'Apple':
-      provider = new OAuthProvider('apple.com');
-      break;
-  }
+async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<void> {
+  const providers = {
+    'Google': new GoogleAuthProvider(),
+    'Facebook': new FacebookAuthProvider(),
+    'Apple': new OAuthProvider('apple.com')
+  };
+  
+  const provider = providers[platform];
+  await signInWithPopup(auth, provider);
+}
 
-  try {
-    const result = await signInWithPopup(auth, provider);
-    return {
-      status: 'success',
-      user: {
-        username: result.user.displayName || '',
-        email: result.user.email || '',
-      }
-    };
-  } catch (error) {
-    console.error("Error during social login:", error);
-    return { status: 'failure' };
-  }
+export function handleError(error: Error, inputName: string): void {
+  const errorMessage = error ? error.message : String(error); 
+  authError.set(errorMessage);
+  displayError([{ inputName, message: errorMessage }]);
 }
 
 export function getAuthError(): string | null {
@@ -146,4 +133,15 @@ export function isAuthLoading(): boolean {
   return get(authLoading);
 }
 
+async function createAccount(email: string, password: string, month: string, day: number, year: number) {
+  
+  const isDateValid = validateDateFields(month, day, year);
+  if (!isDateValid) {
+    return false;
+  }
 
+  await createUserWithEmailAndPassword(auth, email, password);
+  // Here you might want to store the date of birth information in your user profile
+  // For example: await updateUserProfile(auth.currentUser, { dateOfBirth: `${year}-${month}-${day}` });
+  return true;
+}

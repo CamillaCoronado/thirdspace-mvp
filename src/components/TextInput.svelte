@@ -5,6 +5,7 @@
     export let isRequired = true;
     export let placeholder = 'placeholder text';
     export let value: string = '';
+    export let dataInputName: string = 'data-import-name'
 
     function handleInput(event: Event) {
         const target = event.target as HTMLInputElement;
@@ -15,6 +16,7 @@
 <div>
     <input
         id={name}
+        data-input-name={dataInputName}
         name={name}
         type={type} 
         autocomplete={autocomplete}
@@ -23,4 +25,5 @@
         {value}
         on:input={handleInput}
         class="mb-16 text-sm block w-full px-8 py-8 border border-medium-gray rounded-md">
+        <div class="error-message" data-error-for="{dataInputName}"></div>
 </div>
