@@ -12,6 +12,8 @@ import { auth } from '$lib/utils/firebaseSetup';
 import { customValidatePassword, displayError, validateEmail } from './form-utils';
 import type { Auth } from 'firebase/auth';
 import { validateDateFields } from '$lib/utils/form-utils';
+import { signOut } from 'firebase/auth';
+import { user } from '$lib/stores/authStore';
 
 export const currentInputName = writable<string | null>(null);
 
@@ -144,4 +146,17 @@ async function createAccount(email: string, password: string, month: string, day
   // Here you might want to store the date of birth information in your user profile
   // For example: await updateUserProfile(auth.currentUser, { dateOfBirth: `${year}-${month}-${day}` });
   return true;
+}
+
+export async function handleSignOut() {
+  try {
+    authLoading.set(true);
+    await signOut(auth);
+    user.set(null);
+    navigateTo('Home');
+  } catch (error) {
+    console.error('Error signing out:', error);
+  } finally {
+    authLoading.set(false);
+  }
 }

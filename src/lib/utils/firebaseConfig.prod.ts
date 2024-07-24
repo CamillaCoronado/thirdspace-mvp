@@ -1,11 +1,11 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyC5ByxZK_nu0CgJKyvL_p8WWGnjeXt_Hdc",
-  authDomain: "thirdplace-c8aa9.firebaseapp.com",
-  projectId: "thirdplace-c8aa9",
-  storageBucket: "thirdplace-c8aa9.appspot.com",
-  messagingSenderId: "600544106823",
-  appId: "1:600544106823:web:9cc39b35c28b86e8c89462",
-  measurementId: "G-DW5JLQH09G"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID2
 };
 
 export default firebaseConfig;
