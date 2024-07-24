@@ -1,4 +1,4 @@
-<script>
+<script lang=ts>
   import '../app.css';
   import { currentPage } from '$lib/stores/pageStore';
   import { page } from '$app/stores';
@@ -11,32 +11,26 @@
 
   let isReady = false;
 
-  onMount(async () => {
-    console.log('onMount: Initial authLoading:', $authLoading);
+  onMount(() => {
+  const unsubscribe = user.subscribe(async ($user) => {
     await tick(); // Wait for the next DOM update
-    const unsubscribe = user.subscribe(async ($user) => {
-      console.log('User state changed:', $user ? 'logged in' : 'logged out');
-      if (!$authLoading) {
-        console.log('Auth state determined, navigating');
-        await navigateBasedOnAuth();
-        await tick(); // Wait for the navigation to complete
-        isReady = true;
-      }
-    });
-
-    return unsubscribe;
+    if (!$authLoading) {
+      await navigateBasedOnAuth();
+      await tick(); // Wait for the navigation to complete
+      isReady = true;
+    }
   });
 
+  return unsubscribe;
+});
+
   afterNavigate(async () => {
-    console.log('afterNavigate: authLoading:', $authLoading, 'isReady:', isReady);
     if (isReady) {
-      console.log('Navigating based on auth after route change');
       await navigateBasedOnAuth();
     }
   });
 
   $: if ($page.url.pathname === '/dashboard' && !$authLoading && $user) {
-    console.log('Disabling back navigation on dashboard');
     disableBackNavigation();
   }
 </script>
