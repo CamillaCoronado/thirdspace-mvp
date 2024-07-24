@@ -17,7 +17,6 @@ interface ValidationResult {
 
 export function displayError(errors: ErrorItem[]): void {
   errors.forEach(error => {
-    console.log("error.inputName: " + error.inputName);
     const formElements = document.querySelectorAll(`[data-input-name="${error.inputName}"]`);
     const errorMessage = document.querySelector(`[data-error-for="${error.inputName}"]`);
     formElements.forEach((formElement) => {
@@ -27,7 +26,6 @@ export function displayError(errors: ErrorItem[]): void {
         errorMessage.classList.add('error');
         errorMessage.classList.remove('hidden');
       } else {
-        console.log("else");
         console.error(`Form element or error message element for "${error.inputName}" not found.`);
       }
     });
@@ -36,11 +34,9 @@ export function displayError(errors: ErrorItem[]): void {
 }
 
 export function clearErrors(fieldNames: string[]): void {
-  console.log("clearing errors");;
   fieldNames.forEach(fieldName => {
     const errorElement = document.querySelector(`[data-error-for="${fieldName}"]`) as HTMLElement | null;
     if (errorElement) {
-      console.log(errorElement);
       errorElement.classList.add('hidden');
     }
     
@@ -71,7 +67,6 @@ export function validateDateFields(month: string, day: number, year: number): Va
 }
 
 export function validateEmail(email: string): boolean {
-  console.log("validating email");
   const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,63}$/;
   const parts = email.split('@');
   const domainParts = parts.length === 2 ? parts[1].split('.') : [];
@@ -98,8 +93,6 @@ export function validateEmail(email: string): boolean {
 
 
 async function validatePasswordStrength(auth: Auth, password: string): Promise<boolean> {
-  console.log("Validating password strength and Firebase compatibility");
-
   // Check password strength
   if (zxcvbn(password).score < 3) {
     displayError([{ inputName: 'password', message: 'Password is too weak. Please choose a stronger password.' }]);
