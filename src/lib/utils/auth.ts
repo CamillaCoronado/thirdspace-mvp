@@ -3,17 +3,20 @@ import { navigateTo } from '../navigation';
 import {  
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  FacebookAuthProvider, 
-  OAuthProvider 
+  signInWithRedirect, 
+  GoogleAuthProvider,  
+  OAuthProvider,
+  getRedirectResult,
+  getAuth
 } from 'firebase/auth';
+import type { AuthProvider } from 'firebase/auth';
 import { auth } from '$lib/utils/firebaseSetup';
 import { customValidatePassword, displayError, validateEmail } from './form-utils';
 import type { Auth } from 'firebase/auth';
 import { validateDateFields } from '$lib/utils/form-utils';
 import { signOut } from 'firebase/auth';
 import { user } from '$lib/stores/authStore';
+import type { ErrorItem } from '$lib/utils/form-utils'
 
 export const currentInputName = writable<string | null>(null);
 
@@ -93,30 +96,95 @@ export function getAuthAction(): AuthAction {
   return get(authAction);
 }
 
-export async function handleSocialLogin(platform: 'Facebook' | 'Google' | 'Apple') {
-  authLoading.set(true);
-  authError.set(null);
-
+async function signInWithProvider(provider: AuthProvider) {
+  const auth = getAuth();
+  
   try {
-    await socialLogin(platform);
-    navigateTo('Dashboard');
-  } catch (error: any) {
-    console.error('Social login error:', error);
-    handleError(error, inputName);
-  } finally {
-    authLoading.set(false);
+    // Initiate the redirect
+    await signInWithRedirect(auth, provider);
+  } catch (error) {
+    console.error("Error during redirect:", error);
+    throw error;
   }
 }
 
-async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<void> {
-  const providers = {
-    'Google': new GoogleAuthProvider(),
-    'Facebook': new FacebookAuthProvider(),
-    'Apple': new OAuthProvider('apple.com')
-  };
+// Separate function to handle the redirect result
+export async function handleRedirectResult() {
+  const auth = getAuth();
   
-  const provider = providers[platform];
-  await signInWithPopup(auth, provider);
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      const idToken = await result.user.getIdToken();
+      let providerName: string;
+
+      if (result.providerId === GoogleAuthProvider.PROVIDER_ID) {
+        providerName = 'google';
+      } else if (result.providerId === 'apple.com') {
+        providerName = 'apple';
+      } else {
+        throw new Error('Unsupported provider');
+      }
+
+      const response = await fetch(`/api/auth/${providerName}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to authenticate with server');
+      }
+      
+      // Handle successful authentication
+      return result.user;
+    } else {
+      // No redirect result, user hasn't completed sign-in yet
+      console.log("No redirect result");
+    }
+  } catch (error) {
+    console.error("Error handling redirect result:", error);
+    throw error;
+  }
+}
+
+// Usage examples:
+export function signInWithGoogle() {
+  const googleProvider = new GoogleAuthProvider();
+  signInWithProvider(googleProvider);
+}
+
+export function signInWithApple() {
+  const appleProvider = new OAuthProvider('apple.com');
+  signInWithProvider(appleProvider);
+}
+
+export function handleAuthError(error: any, platform?: string): { status: number, message: string } {
+  const errorMessages: { [key: string]: string } = {
+    'auth/popup-closed-by-user': 'Oops! It looks like the sign-in window closed too soon. Please try signing in again.',
+    'auth/cancelled-popup-request': 'We can only open one sign-in window at a time. Please close any other sign-in windows and try again.',
+    'auth/operation-not-allowed': `We're sorry, but signing in with ${platform} isn't available right now. Please try a different sign-in method or contact support for assistance.`,
+    'auth/account-exists-with-different-credential': 'An account with this email address already exists. Please try signing in with the method you used when you first created your account.'
+  };
+
+  const message = errorMessages[error.code] || 'An error occurred during sign-in. Please try again.';
+  
+  console.error(`Social login error with ${platform}:`, error);
+
+  // Determine appropriate status code
+  let status = 400; // Default to Bad Request
+  if (error.code === 'auth/operation-not-allowed') {
+    status = 403; // Forbidden
+  } else if (error.code === 'auth/account-exists-with-different-credential') {
+    status = 409; // Conflict
+  }
+
+  // Display the error to the user
+  displayError([{ inputName: 'auth', message: message }]);
+
+  return { status, message };
 }
 
 export function handleError(error: Error, inputName: string): void {

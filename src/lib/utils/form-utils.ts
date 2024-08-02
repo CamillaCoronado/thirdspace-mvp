@@ -5,7 +5,7 @@ import type { Auth } from 'firebase/auth';
 import { validatePassword } from 'firebase/auth';
 import { handleError } from "./auth";
 
-interface ErrorItem {
+export interface ErrorItem {
   inputName: string;
   message: string;
 }

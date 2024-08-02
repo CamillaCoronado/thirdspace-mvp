@@ -6,12 +6,23 @@
   import { authLoading, user } from '$lib/stores/authStore';
   import { navigateBasedOnAuth, disableBackNavigation } from '$lib/navigation';
   import { afterNavigate } from '$app/navigation';
+  import { handleRedirectResult } from '$lib/utils/auth';
 
   $: $currentPage = $page.url.pathname.split('/').pop() || 'Home';
 
   let isReady = false;
 
   onMount(() => {
+  // Handle redirect result immediately
+  handleRedirectResult().then((redirectUser) => {
+    if (redirectUser) {
+      user.set(redirectUser);
+    }
+  }).catch((error) => {
+    console.error('Error handling redirect:', error);
+  });
+
+  // Set up user subscription
   const unsubscribe = user.subscribe(async ($user) => {
     await tick(); // Wait for the next DOM update
     if (!$authLoading) {
