@@ -3,11 +3,8 @@ name: CI
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch: # This enables manual triggering
+      - cont_integration_DK
+  workflow_dispatch: # Keeps your manual trigger
 
 jobs:
   build-and-test:
