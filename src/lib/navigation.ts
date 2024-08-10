@@ -12,7 +12,10 @@ import { isProtectedRoute } from './utils/routeConfig';
 
 let isNavigating = false;
 
-export async function navigateTo(pageOrPath: string, options: { replace?: boolean } = {}) {
+export async function navigateTo(
+  pageOrPath: string,
+  options: { replace?: boolean } = {}
+) {
   if (isNavigating) return;
   isNavigating = true;
   const path = navigationMap[pageOrPath]?.path || pageOrPath;
@@ -20,24 +23,32 @@ export async function navigateTo(pageOrPath: string, options: { replace?: boolea
   isNavigating = false;
 }
 
-export async function navigate(currentPage: string, direction: 'back' | 'forward') {
+export async function navigate(
+  currentPage: string,
+  direction: 'back' | 'forward'
+) {
   const lowercasePage = currentPage.toLowerCase();
-  
-  const matchingKey = Object.keys(navigationMap)
-    .find(key => key.toLowerCase() === lowercasePage);
-  
-  const targetPage = matchingKey ? navigationMap[matchingKey][direction] : undefined;
-  
+
+  const matchingKey = Object.keys(navigationMap).find(
+    (key) => key.toLowerCase() === lowercasePage
+  );
+
+  const targetPage = matchingKey
+    ? navigationMap[matchingKey][direction]
+    : undefined;
+
   if (targetPage) {
     await navigateTo(targetPage);
   } else {
-    console.warn(`No ${direction} navigation defined for ${currentPage}. Staying on current page.`);
+    console.warn(
+      `No ${direction} navigation defined for ${currentPage}. Staying on current page.`
+    );
   }
 }
 
 export async function navigateToAuthPage() {
   const action = getAuthAction();
-  
+
   if (action === 'SignIn') {
     await navigateTo('EmailLogin', { replace: true });
   } else {
@@ -47,7 +58,7 @@ export async function navigateToAuthPage() {
 
 export async function navigateBasedOnAuth() {
   if (get(authLoading)) return;
-  
+
   const currentUser = get(user);
   const currentPath = window.location.pathname;
 

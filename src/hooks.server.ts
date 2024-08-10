@@ -9,11 +9,17 @@ export const handle: Handle = async ({ event, resolve }) => {
   const currentPath = event.url.pathname;
 
   if (isProtectedRoute(currentPath) && !session && !user) {
-    return Response.redirect(`${event.url.origin}${navigationMap['Signup'].path}`, 302);
+    return Response.redirect(
+      `${event.url.origin}${navigationMap['Signup'].path}`,
+      302
+    );
   }
 
   if (isPublicOnlyRoute(currentPath) && (session || user)) {
-    return Response.redirect(`${event.url.origin}${navigationMap['Dashboard'].path}`, 302);
+    return Response.redirect(
+      `${event.url.origin}${navigationMap['Dashboard'].path}`,
+      302
+    );
   }
 
   return resolve(event);
