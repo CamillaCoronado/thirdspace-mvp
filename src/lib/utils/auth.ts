@@ -108,10 +108,14 @@ export async function handleEmailAuth(
     if (success) {
       navigateTo('Dashboard');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Auth error:', error);
     const inputName: string = get(currentInputName) || 'unknown';
-    handleError(error, inputName);
+    if (error instanceof Error) {
+      handleError(error, inputName);
+    } else {
+      handleError(new Error('An unknown error occurred'), inputName);
+    }
   } finally {
     authLoading.set(false);
   }
@@ -130,9 +134,13 @@ export async function handleSocialLogin(
   try {
     await socialLogin(platform);
     navigateTo('Dashboard');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Social login error:', error);
-    handleError(error, inputName);
+    if (error instanceof Error) {
+      handleError(error, inputName);
+    } else {
+      handleError(new Error('An unknown error occurred'), inputName);
+    }
   } finally {
     authLoading.set(false);
   }
