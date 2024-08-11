@@ -1,15 +1,19 @@
 import { get, writable } from 'svelte/store';
 import { navigateTo } from '../navigation';
-import {  
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  FacebookAuthProvider, 
-  OAuthProvider 
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  OAuthProvider,
 } from 'firebase/auth';
 import { auth } from '$lib/utils/firebaseSetup';
-import { customValidatePassword, displayError, validateEmail } from './form-utils';
+import {
+  customValidatePassword,
+  displayError,
+  validateEmail,
+} from './form-utils';
 import type { Auth } from 'firebase/auth';
 import { validateDateFields } from '$lib/utils/form-utils';
 import { signOut } from 'firebase/auth';
@@ -33,18 +37,42 @@ export function initiateAuth(action: AuthAction) {
   navigateTo('/signup');
 }
 
-export async function validateEmailAndPassword(email: string, password: string, action: AuthAction, auth: Auth, passwordVerification?: string): Promise<boolean> {
+export async function validateEmailAndPassword(
+  email: string,
+  password: string,
+  action: AuthAction,
+  auth: Auth,
+  passwordVerification?: string
+): Promise<boolean> {
   const isEmailValid = validateEmail(email);
-  const isPasswordValid = await customValidatePassword(password, auth, action, passwordVerification);
+  const isPasswordValid = await customValidatePassword(
+    password,
+    auth,
+    action,
+    passwordVerification
+  );
   return isEmailValid && isPasswordValid;
 }
 
-export async function handleEmailAuth(email: string, password: string, passwordVerification?: string, month?: string, day?: number, year?: number) {
+export async function handleEmailAuth(
+  email: string,
+  password: string,
+  passwordVerification?: string,
+  month?: string,
+  day?: number,
+  year?: number
+) {
   const action = get(authAction);
   authLoading.set(true);
   authError.set(null);
   try {
-    const isValid = await validateEmailAndPassword(email, password, action, auth, passwordVerification);
+    const isValid = await validateEmailAndPassword(
+      email,
+      password,
+      action,
+      auth,
+      passwordVerification
+    );
     if (!isValid) {
       return; // Exit early if validation fails
     }
@@ -69,10 +97,10 @@ export async function handleEmailAuth(email: string, password: string, passwordV
       }
 
       success = await createAccount(
-        email, 
-        password, 
-        month ?? '', 
-        day ?? 1, 
+        email,
+        password,
+        month ?? '',
+        day ?? 1,
         year ?? new Date().getFullYear()
       );
     }
@@ -80,10 +108,14 @@ export async function handleEmailAuth(email: string, password: string, passwordV
     if (success) {
       navigateTo('Dashboard');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Auth error:', error);
     const inputName: string = get(currentInputName) || 'unknown';
-    handleError(error, inputName);
+    if (error instanceof Error) {
+      handleError(error, inputName);
+    } else {
+      handleError(new Error('An unknown error occurred'), inputName);
+    }
   } finally {
     authLoading.set(false);
   }
@@ -93,34 +125,42 @@ export function getAuthAction(): AuthAction {
   return get(authAction);
 }
 
-export async function handleSocialLogin(platform: 'Facebook' | 'Google' | 'Apple') {
+export async function handleSocialLogin(
+  platform: 'Facebook' | 'Google' | 'Apple'
+) {
   authLoading.set(true);
   authError.set(null);
 
   try {
     await socialLogin(platform);
     navigateTo('Dashboard');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Social login error:', error);
-    handleError(error, inputName);
+    if (error instanceof Error) {
+      handleError(error, inputName);
+    } else {
+      handleError(new Error('An unknown error occurred'), inputName);
+    }
   } finally {
     authLoading.set(false);
   }
 }
 
-async function socialLogin(platform: 'Facebook' | 'Google' | 'Apple'): Promise<void> {
+async function socialLogin(
+  platform: 'Facebook' | 'Google' | 'Apple'
+): Promise<void> {
   const providers = {
-    'Google': new GoogleAuthProvider(),
-    'Facebook': new FacebookAuthProvider(),
-    'Apple': new OAuthProvider('apple.com')
+    Google: new GoogleAuthProvider(),
+    Facebook: new FacebookAuthProvider(),
+    Apple: new OAuthProvider('apple.com'),
   };
-  
+
   const provider = providers[platform];
   await signInWithPopup(auth, provider);
 }
 
 export function handleError(error: Error, inputName: string): void {
-  const errorMessage = error ? error.message : String(error); 
+  const errorMessage = error ? error.message : String(error);
   authError.set(errorMessage);
   displayError([{ inputName, message: errorMessage }]);
 }
@@ -133,8 +173,13 @@ export function isAuthLoading(): boolean {
   return get(authLoading);
 }
 
-async function createAccount(email: string, password: string, month: string, day: number, year: number) {
-  
+async function createAccount(
+  email: string,
+  password: string,
+  month: string,
+  day: number,
+  year: number
+) {
   const isDateValid = validateDateFields(month, day, year);
   if (!isDateValid) {
     return false;

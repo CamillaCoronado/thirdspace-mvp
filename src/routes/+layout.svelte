@@ -1,4 +1,4 @@
-<script lang=ts>
+<script lang="ts">
   import '../app.css';
   import { currentPage } from '$lib/stores/pageStore';
   import { page } from '$app/stores';
@@ -12,17 +12,17 @@
   let isReady = false;
 
   onMount(() => {
-  const unsubscribe = user.subscribe(async ($user) => {
-    await tick(); // Wait for the next DOM update
-    if (!$authLoading) {
-      await navigateBasedOnAuth();
-      await tick(); // Wait for the navigation to complete
-      isReady = true;
-    }
-  });
+    const unsubscribe = user.subscribe(async ($user) => {
+      await tick(); // Wait for the next DOM update
+      if (!$authLoading) {
+        await navigateBasedOnAuth();
+        await tick(); // Wait for the navigation to complete
+        isReady = true;
+      }
+    });
 
-  return unsubscribe;
-});
+    return unsubscribe;
+  });
 
   afterNavigate(async () => {
     if (isReady) {
@@ -40,7 +40,9 @@
     <slot></slot>
   </main>
 {:else}
-  <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background-color: white;">
+  <div
+    style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; background-color: white;"
+  >
     Loading...
   </div>
 {/if}

@@ -1,38 +1,41 @@
-export const navigationMap: Record<string, {
-  path: string;
-  back?: string;
-  forward?: string;
-}> = {
-  'Home': { 
+export const navigationMap: Record<
+  string,
+  {
+    path: string;
+    back?: string;
+    forward?: string;
+  }
+> = {
+  Home: {
     path: '/',
-    forward: 'Signup' 
+    forward: 'Signup',
   },
-  'Signup': { 
+  Signup: {
     path: '/signup',
-    back: 'Home' 
+    back: 'Home',
   },
-  'EmailLogin': { 
+  EmailLogin: {
     path: '/signup/emaillogin',
-    back: 'Signup', 
-    forward: 'Dashboard' 
+    back: 'Signup',
+    forward: 'Dashboard',
   },
-  'EmailSignup': { 
+  EmailSignup: {
     path: '/signup/emailsignup',
     back: 'Signup',
-    forward: 'Onboarding'
+    forward: 'Onboarding',
   },
-  'Dashboard': {
+  Dashboard: {
     path: '/dashboard',
-    back: 'EmailSignup'
+    back: 'EmailSignup',
   },
-  'Profile': {
+  Profile: {
     path: '/profile',
     back: 'Dashboard',
-    forward: 'Settings'
+    forward: 'Settings',
   },
-  'Settings': {
+  Settings: {
     path: '/settings',
-    back: 'Profile'
+    back: 'Profile',
   },
   // Add more routes as needed
 };
