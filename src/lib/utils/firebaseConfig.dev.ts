@@ -5,7 +5,7 @@ const firebaseDevConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET_DEV,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID_DEV,
   appId: import.meta.env.VITE_FIREBASE_APP_ID_DEV,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID2_DEV,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID_DEV,
 };
 
 export default firebaseDevConfig;
