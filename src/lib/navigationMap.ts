@@ -13,6 +13,7 @@ export const navigationMap: Record<
   Signup: {
     path: '/signup',
     back: 'Home',
+    forward: 'Onboarding',
   },
   EmailLogin: {
     path: '/signup/emaillogin',
@@ -32,6 +33,20 @@ export const navigationMap: Record<
     path: '/profile',
     back: 'Dashboard',
     forward: 'Settings',
+  },
+  Onboarding: {
+    path: '/onboarding',
+    forward: 'OnboardingMatch',
+  },
+  OnboardingMatch: {
+    path: '/onboarding-instant-match',
+    back: 'Onboarding',
+    forward: 'OnboardingMeet'
+  },
+  OnboardingMeet: {
+    path: '/onboarding-meet-share',
+    back: 'OnboardingMatch',
+    forward: 'Dashboard'
   },
   Settings: {
     path: '/settings',

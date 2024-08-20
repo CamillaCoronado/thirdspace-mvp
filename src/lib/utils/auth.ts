@@ -106,7 +106,11 @@ export async function handleEmailAuth(
     }
 
     if (success) {
-      navigateTo('Dashboard');
+      if (action === 'SignIn') {
+        navigateTo('Dashboard');
+      } else {
+        navigateTo('Onboarding');
+      }
     }
   } catch (error: unknown) {
     console.error('Auth error:', error);
