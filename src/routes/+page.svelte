@@ -3,7 +3,7 @@
 </script>
 
 <div
-  class="px-16 flex flex-col items-center justify-between h-screen w-full bg-custom-gradient text-white text-center"
+  class="px-16 flex flex-col items-center justify-between h-screen w-full bg-dark-yellow text-white text-center"
 >
   <div class="relative h-12 w-52" style="top: 25%;">
     <img

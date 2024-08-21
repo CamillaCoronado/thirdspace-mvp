@@ -27,7 +27,10 @@ export async function navigate(
   currentPage: string,
   direction: 'back' | 'forward'
 ) {
+  console.log("current page: " + currentPage);
+  console.log("direction: " + direction);
   const lowercasePage = currentPage.toLowerCase();
+  console.log(lowercasePage);
 
   const matchingKey = Object.keys(navigationMap).find(
     (key) => key.toLowerCase() === lowercasePage

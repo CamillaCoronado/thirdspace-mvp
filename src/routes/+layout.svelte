@@ -6,8 +6,14 @@
   import { authLoading, user } from '$lib/stores/authStore';
   import { navigateBasedOnAuth, disableBackNavigation } from '$lib/navigation';
   import { afterNavigate } from '$app/navigation';
+  import { navigationMap } from '$lib/navigationMap';
 
-  $: $currentPage = $page.url.pathname.split('/').pop() || 'Home';
+  $: {
+  const path = $page.url.pathname;
+  $currentPage = Object.keys(navigationMap).find(key => 
+    navigationMap[key].path === path
+  ) || 'Unknown';
+}
 
   let isReady = false;
 
