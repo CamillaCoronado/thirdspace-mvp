@@ -1,3 +1,4 @@
+// firebaseConfig.dev.ts
 const firebaseDevConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY_DEV,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN_DEV,

@@ -1,17 +1,23 @@
+// vite.config.ts
+import { defineConfig } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vitest/config';
 import { svelteTesting } from '@testing-library/svelte/vite';
 
-console.log(
-  'VITE_FIREBASE_API_KEY_DEV:',
-  process.env.VITE_FIREBASE_API_KEY_DEV
-);
+export default defineConfig(({ mode }) => {
+  // You can still log the mode for debugging purposes
+  console.log(`Running in ${mode} mode`);
 
-export default defineConfig({
-  plugins: [sveltekit(), svelteTesting()],
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./vitest-setup.ts'],
-  },
+  return {
+    plugins: [sveltekit(), svelteTesting()],
+    envPrefix: 'VITE_', // Ensure only env variables with this prefix are accessible via import.meta.env
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './vitest-setup.ts',
+    },
+    define: {
+      // If you need to pass process.env variables from the node environment, you can include them here
+      // 'process.env': process.env,
+    },
+  };
 });

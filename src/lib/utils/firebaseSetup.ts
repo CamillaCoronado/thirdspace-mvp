@@ -3,7 +3,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import firebaseDevConfig from './firebaseConfig.dev';
 import firebaseProdConfig from './firebaseConfig.prod';
 
-const environment = process.env.NODE_ENV;
+const environment = import.meta.env.MODE;
 
 let auth: any; // Use any or the appropriate type
 
