@@ -14,7 +14,7 @@
   }
 </style>
 
-<div class="flex flex-col mx-16">
+<div class="flex flex-col mx-16 wide-letter">
   <div>
     <BackNav pageName={$currentPage}></BackNav>
     <LogoColor/>

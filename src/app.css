@@ -51,9 +51,12 @@ figure {
 body {
     margin: 0;
     font-family: 'Montserrat', sans-serif;
-    letter-spacing: 0.1em;
 	line-height: 1;
 	font-size:20px;
+}
+
+.wide-letter {
+	letter-spacing: 0.1em;
 }
 
 h2 {

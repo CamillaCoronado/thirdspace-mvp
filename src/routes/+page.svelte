@@ -2,7 +2,7 @@
   import { initiateAuth } from '../lib/utils/auth';
 </script>
 
-<div class="px-16 flex flex-col items-center justify-between h-screen w-full bg-custom-gradient text-white text-center">
+<div class="px-16 wide-letter flex flex-col items-center justify-between h-screen w-full bg-custom-gradient text-white text-center">
   <div class="relative h-12 w-52" style="top: 25%;">
     <img src="../src/assets/logo.png" alt="Logo" class="w-[210px] h-[48px] object-contain" />
   </div>
