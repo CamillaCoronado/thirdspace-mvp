@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 beforeEach(() => {
-  // Reset environment variables before each test
-  process.env.NODE_ENV = 'test'; // Default to 'test'
-
   // Stub `import.meta.env` with necessary variables
   vi.stubGlobal('import.meta', {
     env: {
@@ -24,6 +21,12 @@ beforeEach(() => {
       VITE_FIREBASE_MEASUREMENT_ID_DEV: 'fake-dev-measurement-id',
     },
   });
+
+  // Log only VITE_ prefixed environment variables
+  const viteEnvVars = Object.fromEntries(
+    Object.entries(import.meta.env).filter(([key]) => key.startsWith('VITE_'))
+  );
+  console.log('VITE_ Environment Variables:', viteEnvVars);
 
   // Reset modules to ensure fresh imports
   vi.resetModules();

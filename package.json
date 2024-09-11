@@ -8,9 +8,9 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "test": "cross-env NODE_ENV=development vitest run",
-    "test:ui": "vitest --ui",
-    "test:watch": "cross-env NODE_ENV=development vitest",
+    "test": "cross-env NODE_ENV=test vitest run",
+    "test:ui": "cross-env NODE_ENV=test vitest --ui",
+    "test:watch": "cross-env NODE_ENV=test vitest",
     "lint": "eslint ."
   },
   "devDependencies": {
