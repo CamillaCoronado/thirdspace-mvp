@@ -7,7 +7,7 @@
 </script>
 
 <header class="bg-white p-4 flex flex-col items-center mx-16">
-    <div class="flex justify-between w-full items-center mb-32">
+    <div class="flex justify-between w-full items-center mb-16">
       <img 
       src="../src/assets/profile-icon.png" 
       alt="profile icon"
@@ -47,12 +47,12 @@
       </div>
       
       <div class="bg-white px-16 py-32 rounded-lg shadow">
-        <span class="text-center mb-16 text-xl font-medium">Embark on a journey where your choices reveal insights about you.</span>
+        <span class="text-center mb-16 inline-block text-xl font-medium">Embark on a journey where your choices reveal insights about you.</span>
         <Button bgColor= bg-dark-yellow color= "white" text="Take Quiz" buttonType =""></Button>
       </div>
 
       <div class="bg-white px-16 py-32 rounded-lg shadow">
-        <p class="text-center mb-4">Verify your profile picture to continue.</p>
+        <span class="text-center mb-16 inline-block text-xl font-medium">Verify your profile picture to continue.</span>
         <Button bgColor= bg-dark-yellow color= "white" text="Pic Verification" buttonType =""></Button>
       </div>
     </div>
