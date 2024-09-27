@@ -1,11 +1,18 @@
+<!--  src/routes/signup/+page.svelte -->
+
 <script lang="ts">
+  import { onMount } from 'svelte';
   import LogoColor from '../../components/LogoColor.svelte';
   import Button from '../../components/Button.svelte';
   import BackNav from "../../components/BackNav.svelte";
   import { currentPage } from '$lib/stores/pageStore';
-  import { signInWithApple, signInWithGoogle} from '../../lib/utils/auth';
+  import { signInWithApple, signInWithGoogle, signInWithFacebook, handleRedirectResult } from '../../lib/utils/auth';
   import { navigateToAuthPage } from '../../lib/navigation';
 
+  onMount(async () => {
+    console.log("onMount triggered");
+    await handleRedirectResult();
+  });
 </script>
 
 <style>
@@ -17,7 +24,7 @@
 <div class="flex flex-col mx-16">
   <div>
     <BackNav pageName={$currentPage}></BackNav>
-    <LogoColor/>
+    <LogoColor />
     <h1 class="text-center mb-16">Join a chat!</h1>
     <Button text="Facebook" bgColor="bg-dark-blue" on:click={() => signInWithFacebook()}></Button>
     <Button text="Google" bgColor="bg-dark-cobalt" on:click={() => signInWithGoogle()}></Button>

@@ -1,22 +1,26 @@
+// auth.ts
+
 import { get, writable } from 'svelte/store';
 import { navigateTo } from '../navigation';
 import {  
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
+  signInWithPopup, 
   signInWithRedirect, 
   GoogleAuthProvider,  
   OAuthProvider,
+  FacebookAuthProvider,
   getRedirectResult,
-  getAuth
+  getAuth,
+  signOut
 } from 'firebase/auth';
 import type { AuthProvider } from 'firebase/auth';
 import { auth } from '$lib/utils/firebaseSetup';
 import { customValidatePassword, displayError, validateEmail } from './form-utils';
 import type { Auth } from 'firebase/auth';
 import { validateDateFields } from '$lib/utils/form-utils';
-import { signOut } from 'firebase/auth';
 import { user } from '$lib/stores/authStore';
-import type { ErrorItem } from '$lib/utils/form-utils'
+import type { ErrorItem } from '$lib/utils/form-utils';
 
 export const currentInputName = writable<string | null>(null);
 
@@ -96,36 +100,71 @@ export function getAuthAction(): AuthAction {
   return get(authAction);
 }
 
+// Function to check if the device is mobile
+function isMobileDevice() {
+  return /Mobi|Android/i.test(navigator.userAgent);
+}
+
+// Function to handle sign-in with a provider, choosing between popup or redirect
 async function signInWithProvider(provider: AuthProvider) {
-  const auth = getAuth();
-  
   try {
-    // Initiate the redirect
-    await signInWithRedirect(auth, provider);
-  } catch (error) {
-    console.error("Error during redirect:", error);
-    throw error;
+    if (isMobileDevice()) {
+      // Use redirect for mobile devices
+      await signInWithRedirect(auth, provider);
+    } else {
+      // Use popup for desktop
+      const result = await signInWithPopup(auth, provider);
+
+      // Check if the provider is a GoogleAuthProvider
+      if (provider instanceof GoogleAuthProvider) {
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const token = credential?.accessToken;
+        console.log('Google Access Token:', token);
+      } 
+      // Check if the provider is an OAuthProvider (like Apple)
+      else if (provider instanceof OAuthProvider) {
+        const credential = OAuthProvider.credentialFromResult(result);
+        const token = credential?.accessToken;
+        console.log('OAuth Access Token:', token);
+      }
+
+      const userInfo = result.user;
+      console.log('User signed in:', userInfo);
+    }
+  } catch (error: any) {
+    console.error("Error during sign-in:", error);
+    handleAuthError(error, provider.providerId);
   }
 }
 
+
 // Separate function to handle the redirect result
 export async function handleRedirectResult() {
-  const auth = getAuth();
-  
   try {
+    console.log("Attempting to get redirect result...");
     const result = await getRedirectResult(auth);
+    
     if (result) {
+      console.log("Redirect result received:", result);
+      
+      // Get the ID token of the user
       const idToken = await result.user.getIdToken();
+      console.log("User ID Token:", idToken);
+      
       let providerName: string;
-
+      
+      // Determine the provider that was used for the sign-in
       if (result.providerId === GoogleAuthProvider.PROVIDER_ID) {
         providerName = 'google';
+        console.log("Provider: Google");
       } else if (result.providerId === 'apple.com') {
         providerName = 'apple';
+        console.log("Provider: Apple");
       } else {
         throw new Error('Unsupported provider');
       }
 
+      // Send the token to your backend server
       const response = await fetch(`/api/auth/${providerName}`, {
         method: 'POST',
         headers: {
@@ -138,17 +177,20 @@ export async function handleRedirectResult() {
         throw new Error('Failed to authenticate with server');
       }
       
+      console.log("Authentication with server successful");
+
       // Handle successful authentication
       return result.user;
     } else {
       // No redirect result, user hasn't completed sign-in yet
-      console.log("No redirect result");
+      console.log("No redirect result found");
     }
   } catch (error) {
     console.error("Error handling redirect result:", error);
     throw error;
   }
 }
+
 
 // Usage examples:
 export function signInWithGoogle() {
@@ -160,6 +202,14 @@ export function signInWithApple() {
   const appleProvider = new OAuthProvider('apple.com');
   signInWithProvider(appleProvider);
 }
+
+// Add this function to handle Facebook sign-in
+export function signInWithFacebook() {
+  const facebookProvider = new FacebookAuthProvider();
+  signInWithProvider(facebookProvider); // Uses popup or redirect based on device
+}
+
+
 
 export function handleAuthError(error: any, platform?: string): { status: number, message: string } {
   const errorMessages: { [key: string]: string } = {
@@ -202,7 +252,6 @@ export function isAuthLoading(): boolean {
 }
 
 async function createAccount(email: string, password: string, month: string, day: number, year: number) {
-  
   const isDateValid = validateDateFields(month, day, year);
   if (!isDateValid) {
     return false;
