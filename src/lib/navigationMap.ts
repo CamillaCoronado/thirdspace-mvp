@@ -13,21 +13,39 @@ export const navigationMap: Record<
   Signup: {
     path: '/signup',
     back: 'Home',
-    forward: 'Onboarding',
+    forward: '/signup/zipcode',
   },
   EmailLogin: {
     path: '/signup/emaillogin',
     back: 'Signup',
-    forward: 'Dashboard',
+    forward: '/allchat',
   },
   EmailSignup: {
     path: '/signup/emailsignup',
     back: 'Signup',
-    forward: 'Onboarding',
+    forward: '/signup/zipcode',
+  },
+  ZipCode: {
+    path: '/signup/zipcode',
+    back: 'EmailSignup',
+    forward: '/signup/birthday',
+  },
+  Birthday: {
+    path: '/signup/birthday',
+    back: '/signup/name',
+    forward: '/signup/name',
+  },
+  Name: {
+    path: '/signup/name',
+    back: '/signup/birthday',
+    forward: '/allchat',
+  },
+  AllChat: {
+    path: '/allchat',
+    back: '/signup/name',
   },
   Dashboard: {
     path: '/dashboard',
-    back: 'EmailSignup',
   },
   Profile: {
     path: '/profile',
