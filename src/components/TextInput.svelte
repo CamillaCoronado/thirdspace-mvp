@@ -23,7 +23,8 @@
         placeholder={placeholder}
         required={isRequired}
         {value}
+        on:keydown
         on:input={handleInput}
-        class="mb-16 text-sm block w-full px-8 py-8 border border-medium-gray rounded-md">
+        class="mb-16 text-sm block w-full px-8 py-8 border border-medium-gray rounded-md focus:outline-indigo">
         <div class="error-message" data-error-for="{dataInputName}"></div>
 </div>

@@ -10,7 +10,7 @@
 
 <button on:click={handleClick} class="inline-block absolute top-[70px] left-[16px]">
     <img 
-    src="../src/assets/back-nav.png" 
+    src="/back-nav.png" 
     alt="back-nav"
     class= "w-28 h-28"/>
 </button>
