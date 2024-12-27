@@ -1,11 +1,10 @@
 <script lang="ts">
   import LogoColor from '../../components/LogoColor.svelte';
   import Button from '../../components/Button.svelte';
-  import BackNav from "../../components/BackNav.svelte";
+  import BackNav from '../../components/BackNav.svelte';
   import { currentPage } from '$lib/stores/pageStore';
-  import {handleSocialLogin} from '../../lib/utils/auth';
-  import {navigateToAuthPage} from '../../lib/navigation';
-
+  import { handleSocialLogin } from '../../lib/utils/auth';
+  import { navigateToAuthPage } from '../../lib/navigation';
 </script>
 
 <style>
