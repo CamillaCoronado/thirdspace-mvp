@@ -5,7 +5,8 @@
     export let isRequired = true;
     export let placeholder = 'placeholder text';
     export let value: string = '';
-    export let dataInputName: string = 'data-import-name'
+    export let dataInputName: string = 'data-import-name';
+    export let maxLength: number = 20;
 
     function handleInput(event: Event) {
         const target = event.target as HTMLInputElement;
@@ -23,6 +24,7 @@
         placeholder={placeholder}
         required={isRequired}
         {value}
+        maxlength={maxLength}
         on:keydown
         on:input={handleInput}
         class="mb-16 text-sm block w-full px-8 py-8 border border-medium-gray rounded-md focus:outline-indigo">
