@@ -35,14 +35,14 @@
           <div class={`w-7 h-7 rounded-full ${step1Completed ? 'bg-medium-green' : 'bg-gray-300'} mr-16`}></div>
           <span class="text-medium-gray text-base mr-16">STEP 1</span>
           <span class="mr-16 text-base font-medium">Take Quiz</span>
-          <span class="mr-16 text-green-300 text-xs font-medium">Completed</span>
+          <span class="mr-16 text-medium-green text-xs font-medium">Completed</span>
         </div>
         <span class= "h-[30px] block w-[3px] ml-[12px] my-8 bg-medium-green "></span>
         <div class="flex items-center">
           <div class={`w-7 h-7 rounded-full ${step2InProgress ? 'bg-dark-pink' : 'bg-gray-300'} mr-16`}></div>
           <span class="text-medium-gray text-base mr-16">STEP 2</span>
           <span class="text-base mr-16 font-medium">Pic Verification</span>
-          <span class="text-pink text-xs font-medium">In Progress</span>
+          <span class="text-dark-pink text-xs font-medium">In Progress</span>
         </div>
       </div>
       

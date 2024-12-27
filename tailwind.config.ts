@@ -29,17 +29,11 @@ export default {
         // Medium colors
         'pink': '#CD93F1',
         'medium-indigo': '#7065DF',
-        'medium-gray' : '#8D8B90',
-        'fb-blue': '#3B5998',
-        'g-blue': '#4485F5',
 
         // Dark colors
         'indigo': '#6A2AF8',
         'dark-gray': '#8D8B90',
         'dark-charcoal': '#4D4A54',
-
-        //error and function 
-        'red': "#FE1D0E",
         },
       },
     plugins: [],
