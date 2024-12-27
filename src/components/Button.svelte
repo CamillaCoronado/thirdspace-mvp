@@ -1,11 +1,11 @@
 <script>
     export let text = 'Button';
-    export let bgColor = 'bg-dark-pink';
+    export let bgColor = 'bg-indigo';
     export let color = 'text-white';
     export let buttonType = undefined;
-    export let border = 'border solid'
+    export let border = 'border solid';
     export let borderWidth = '1px';
-    export let borderColor = 'dark-pink';
+    export let borderColor = 'indigo';
 </script>
 
 <button 
