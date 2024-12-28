@@ -66,7 +66,7 @@ export async function navigateBasedOnAuth() {
   const currentPath = window.location.pathname;
 
   if (currentUser && isPublicOnlyRoute(currentPath)) {
-    return goto(navigationMap['Dashboard'].path, { replaceState: true });
+    return goto(navigationMap['AllChat'].path, { replaceState: true });
   } else if (!currentUser && isProtectedRoute(currentPath)) {
     return goto(navigationMap['Signup'].path, { replaceState: true });
   }

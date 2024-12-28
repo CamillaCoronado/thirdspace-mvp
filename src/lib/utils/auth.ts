@@ -18,8 +18,41 @@ import type { Auth } from 'firebase/auth';
 import { validateDateFields } from '$lib/utils/form-utils';
 import { signOut } from 'firebase/auth';
 import { user } from '$lib/stores/authStore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { firestore } from '$lib/utils/firebaseSetup';
 
 export const currentInputName = writable<string | null>(null);
+
+async function createUserDoc(userId: string, data = {}) {
+  const userRef = doc(firestore, 'users', userId);
+  await setDoc(userRef, {
+    createdAt: new Date().toISOString(),
+    ...data
+  });
+}
+
+async function updateUserInfo(userId: string, data: {
+  zipcode?: string;
+  name?: string;
+}) {
+  const userRef = doc(firestore, 'users', userId);
+  await setDoc(userRef, data, { merge: true });
+}
+
+async function checkMissingUserInfo(userId: string) {
+  const userRef = doc(firestore, 'users', userId);
+  const userDoc = await getDoc(userRef);
+  const data = userDoc.data();
+
+  if (!data?.zipcode) {
+    return '/signup/zipcode';
+  }
+  if (!data?.name) {
+    return '/signup/name';
+  }
+  
+  return null; // no missing info
+}
 
 type AuthAction = 'CreateAccount' | 'SignIn';
 
@@ -83,13 +116,15 @@ export async function handleEmailAuth(
       success = true;
     } else {
       const missingFields = [];
-      if (!month) missingFields.push('month');
-      if (!day) missingFields.push('day');
-      if (!year) missingFields.push('year');
+      if (action === 'CreateAccount') {
+        if (!month || !day || !year) {
+          missingFields.push('birthday');
+        }
+      }
 
       if (missingFields.length > 0) {
         const missingFieldsStr = missingFields.join(', ');
-        const errorMessage = `Missing date information: ${missingFieldsStr}`;
+        const errorMessage = `Missing information: ${missingFieldsStr}`;
         console.error(errorMessage);
         const inputName = get(currentInputName) || missingFields[0];
         handleError(new Error(errorMessage), inputName);
@@ -107,9 +142,14 @@ export async function handleEmailAuth(
 
     if (success) {
       if (action === 'SignIn') {
-        navigateTo('Dashboard');
+        if (!auth.currentUser) {
+          console.error('No user found after signin');
+          return;
+        }
+        const nextPage = await checkMissingUserInfo(auth.currentUser.uid);
+        navigateTo(nextPage || 'AllChat');
       } else {
-        navigateTo('Onboarding');
+        navigateTo('/signup/zipcode');
       }
     }
   } catch (error: unknown) {
@@ -137,8 +177,14 @@ export async function handleSocialLogin(
 
   try {
     await socialLogin(platform);
-    navigateTo('Dashboard');
+    if (!auth.currentUser) {
+      console.error('No user found after social login');
+      return;
+    }
+    const nextPage = await checkMissingUserInfo(auth.currentUser.uid);
+    navigateTo(nextPage || 'AllChat');
   } catch (error: unknown) {
+    const inputName: string = get(currentInputName) || 'unknown';
     console.error('Social login error:', error);
     if (error instanceof Error) {
       handleError(error, inputName);
@@ -189,9 +235,10 @@ async function createAccount(
     return false;
   }
 
-  await createUserWithEmailAndPassword(auth, email, password);
-  // Here you might want to store the date of birth information in your user profile
-  // For example: await updateUserProfile(auth.currentUser, { dateOfBirth: `${year}-${month}-${day}` });
+  const userCred = await createUserWithEmailAndPassword(auth, email, password);
+  await createUserDoc(userCred.user.uid, {
+    birthday: `${year}-${month}-${day}`
+  });
   return true;
 }
 

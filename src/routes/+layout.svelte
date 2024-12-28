@@ -36,7 +36,7 @@
     }
   });
 
-  $: if ($page.url.pathname === '/dashboard' && !$authLoading && $user) {
+  $: if ($page.url.pathname === '/allchat' && !$authLoading && $user) {
     disableBackNavigation();
   }
 </script>

@@ -3,6 +3,8 @@
     import { messages, sendMessage } from '$lib/stores/chatStore';
     import { auth } from '$lib/utils/firebaseSetup';
     import { afterUpdate } from 'svelte';
+    import Button from '../../components/Button.svelte';
+    import { handleSignOut } from '$lib/utils/auth';
     
     let message: string = '';
     let chatContainer: HTMLDivElement;
@@ -106,6 +108,7 @@
             </form>
         </div>
     </div>
+    <Button text="sign out" on:click={() => handleSignOut()} ></Button>
 </div>
 <style lang="postcss">
     /* Custom scrollbar for WebKit browsers */

@@ -5,6 +5,9 @@
     import { currentPage } from '$lib/stores/pageStore';
     import { navigateTo } from '$lib/navigation';
     import TextInput from '../../../components/TextInput.svelte';
+    import { auth } from '$lib/utils/firebaseSetup';
+    import { firestore } from '$lib/utils/firebaseSetup';
+    import { doc, getDoc, setDoc } from 'firebase/firestore';
   
     let zipcode = '';
   
@@ -13,20 +16,45 @@
     if (!/^\d$/.test(key) && key !== 'Backspace' && key !== 'Delete') {
         event.preventDefault();
     }
-}
+  }
   
     function handleInput(event: Event) {
       const target = event.target as HTMLInputElement;
       zipcode = target.value.replace(/\D/g, '');  // Keep only digits
     }
+
+    async function updateUserInfo(userId: string, data: { zipcode?: string }) {
+      const userRef = doc(firestore, 'users', userId);
+      await setDoc(userRef, data, { merge: true });
+  }
   
-    function handleNext() {
-      if (zipcode.length === 5) {
-        navigateTo('/next-page');
+    async function handleNext() {
+  if (!auth.currentUser) {
+    console.error('No user found');
+    return;
+  }
+
+  if (zipcode.length === 5) {
+    try {
+      await updateUserInfo(auth.currentUser.uid, { zipcode });
+      // Check if they came from email signup (already have birthday)
+      const userRef = doc(firestore, 'users', auth.currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      const userData = userDoc.data();
+      
+      if (userData?.birthday) {
+        navigateTo('/signup/name');
       } else {
-        alert('Please enter a valid 5-digit zipcode.');
+        navigateTo('/signup/birthday');
       }
+    } catch (error) {
+      console.error('Error saving zipcode:', error);
+      alert('Error saving zipcode. Please try again.');
     }
+  } else {
+    alert('Please enter a valid 5-digit zipcode.');
+  }
+}
 </script>
 <div class="flex flex-col mx-16 wide-letter">
   <div>

@@ -5,16 +5,35 @@
     import { currentPage } from '$lib/stores/pageStore';
     import { navigateTo } from '$lib/navigation';
     import TextInput from '../../../components/TextInput.svelte';
+    import { doc, setDoc } from 'firebase/firestore';
+    import { firestore } from '$lib/utils/firebaseSetup';
+    import { auth } from '$lib/utils/firebaseSetup';
     
     let nickname = '';
+
+  async function updateUserInfo(userId: string, data: { name?: string }) {
+    const userRef = doc(firestore, 'users', userId);
+    await setDoc(userRef, data, { merge: true });
+  }
     
-    function handleNext() {
-      if (nickname.trim()) {
-        navigateTo('/birthday');
-      } else {
-        alert('Please enter a nickname.');
-      }
+  async function handleNext() {
+  if (!auth.currentUser) {
+    console.error('No user found');
+    return;
+  }
+
+  if (nickname.trim()) {
+    try {
+      await updateUserInfo(auth.currentUser.uid, { name: nickname.trim() });
+      navigateTo('/allchat'); // finally go to chat since this is last step
+    } catch (error) {
+      console.error('Error saving name:', error);
+      alert('Error saving name. Please try again.');
     }
+  } else {
+    alert('Please enter a nickname.');
+  }
+}
 </script>
 
 <div class="flex flex-col mx-16 wide-letter">

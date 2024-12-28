@@ -6,7 +6,7 @@
     export let placeholder = 'placeholder text';
     export let value: string = '';
     export let dataInputName: string = 'data-import-name';
-    export let maxLength: number = 20;
+    export let maxLength: number = 30;
 
     function handleInput(event: Event) {
         const target = event.target as HTMLInputElement;
