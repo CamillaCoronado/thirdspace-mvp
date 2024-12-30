@@ -25,6 +25,7 @@
         required={isRequired}
         {value}
         maxlength={maxLength}
+        maxlength={maxLength}
         on:keydown
         on:input={handleInput}
         class="mb-16 text-sm block w-full px-8 py-8 border border-medium-gray rounded-md focus:outline-indigo">
