@@ -135,7 +135,6 @@ async function validatePasswordStrength(
   auth: Auth,
   password: string
 ): Promise<boolean> {
-  // Check password strength
   if (zxcvbn(password).score < 3) {
     displayError([
       {
@@ -146,7 +145,6 @@ async function validatePasswordStrength(
     return false;
   }
 
-  // Validate with Firebase
   try {
     await validatePassword(auth, password);
     clearErrors(['password']);
