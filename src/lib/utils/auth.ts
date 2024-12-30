@@ -202,7 +202,6 @@ export async function handleSocialLogin(
     }
     await createAccountWithSocial();
     const nextPage = await checkMissingUserInfo(auth.currentUser.uid);
-    console.log("navigating to " + nextPage + " after successful popup login");
     navigateTo(nextPage || 'AllChat');
   } catch (error: unknown) {
     const inputName: string = get(currentInputName) || 'unknown';
@@ -284,8 +283,6 @@ async function createAccountWithEmail(
 
     // Create user with email and password
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
-    console.log('User account created successfully:', userCred.user.uid);
-
     // Wait for auth state to settle
     await waitForAuthState();
 

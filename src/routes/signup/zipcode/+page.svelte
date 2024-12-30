@@ -52,7 +52,6 @@
       alert('Error saving zipcode. Please try again.');
     }
   } else {
-    console.log("zipcode: " + zipcode);
     alert('Please enter a valid 5-digit zipcode.');
   }
 }
@@ -69,6 +68,7 @@
         on:input={handleInput}
         on:keydown={handleKeyDown}
         placeholder="Zipcode"
+        maxLength= {5}
       ></TextInput>
     </div>
     <Button

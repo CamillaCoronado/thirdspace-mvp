@@ -27,11 +27,7 @@ export async function navigate(
   currentPage: string,
   direction: 'back' | 'forward'
 ) {
-  console.log("current page: " + currentPage);
-  console.log("direction: " + direction);
   const lowercasePage = currentPage.toLowerCase();
-  console.log(lowercasePage);
-
   const matchingKey = Object.keys(navigationMap).find(
     (key) => key.toLowerCase() === lowercasePage
   );
@@ -53,10 +49,8 @@ export async function navigateToAuthPage() {
   const action = getAuthAction();
 
   if (action === 'SignIn') {
-    console.log("navigating to emailLogin inside of navigateToAuthPage");
     await navigateTo('EmailLogin', { replace: true });
   } else {
-    console.log("navigating to emailSignup inside of navigateToAuthPage");
     await navigateTo('EmailSignup', { replace: true });
   }
 }
@@ -68,7 +62,7 @@ export async function navigateBasedOnAuth() {
   const currentUser = get(user);
   const currentPath = window.location.pathname;
 
-  if (currentUser && isPublicOnlyRoute(currentPath)) {
+  if (currentUser && isPublicOnlyRoute(currentPath) && action === "SignIn") {
     return goto(navigationMap['AllChat'].path, { replaceState: true });
   }
   else if (currentUser && isPublicOnlyRoute(currentPath) && action === "CreateAccount") {
