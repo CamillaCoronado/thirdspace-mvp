@@ -25,6 +25,7 @@
   if (nickname.trim()) {
     try {
       await updateUserInfo(auth.currentUser.uid, { name: nickname.trim() });
+      
       navigateTo('/allchat'); // finally go to chat since this is last step
     } catch (error) {
       console.error('Error saving name:', error);

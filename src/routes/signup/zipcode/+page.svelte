@@ -9,7 +9,7 @@
     import { firestore } from '$lib/utils/firebaseSetup';
     import { doc, getDoc, setDoc } from 'firebase/firestore';
   
-    let zipcode = '';
+    let zipcode: string = '';
   
     function handleKeyDown(event: KeyboardEvent) {
     const key = event.key;
@@ -52,6 +52,7 @@
       alert('Error saving zipcode. Please try again.');
     }
   } else {
+    console.log("zipcode: " + zipcode);
     alert('Please enter a valid 5-digit zipcode.');
   }
 }
@@ -64,7 +65,7 @@
     <div class="mb-8">
       <TextInput
         type="text"
-        value={zipcode}
+        bind:value={zipcode}
         on:input={handleInput}
         on:keydown={handleKeyDown}
         placeholder="Zipcode"

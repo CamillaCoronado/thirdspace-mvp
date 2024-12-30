@@ -53,21 +53,28 @@ export async function navigateToAuthPage() {
   const action = getAuthAction();
 
   if (action === 'SignIn') {
+    console.log("navigating to emailLogin inside of navigateToAuthPage");
     await navigateTo('EmailLogin', { replace: true });
   } else {
+    console.log("navigating to emailSignup inside of navigateToAuthPage");
     await navigateTo('EmailSignup', { replace: true });
   }
 }
 
 export async function navigateBasedOnAuth() {
   if (get(authLoading)) return;
+  const action = getAuthAction();
 
   const currentUser = get(user);
   const currentPath = window.location.pathname;
 
   if (currentUser && isPublicOnlyRoute(currentPath)) {
     return goto(navigationMap['AllChat'].path, { replaceState: true });
-  } else if (!currentUser && isProtectedRoute(currentPath)) {
+  }
+  else if (currentUser && isPublicOnlyRoute(currentPath) && action === "CreateAccount") {
+    return goto(navigationMap['ZipCode'].path, { replaceState: true });
+  }
+  else if (!currentUser && isProtectedRoute(currentPath)) {
     return goto(navigationMap['Signup'].path, { replaceState: true });
   }
 }
