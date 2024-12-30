@@ -27,11 +27,7 @@ export async function navigate(
   currentPage: string,
   direction: 'back' | 'forward'
 ) {
-  console.log("current page: " + currentPage);
-  console.log("direction: " + direction);
   const lowercasePage = currentPage.toLowerCase();
-  console.log(lowercasePage);
-
   const matchingKey = Object.keys(navigationMap).find(
     (key) => key.toLowerCase() === lowercasePage
   );
@@ -61,13 +57,18 @@ export async function navigateToAuthPage() {
 
 export async function navigateBasedOnAuth() {
   if (get(authLoading)) return;
+  const action = getAuthAction();
 
   const currentUser = get(user);
   const currentPath = window.location.pathname;
 
-  if (currentUser && isPublicOnlyRoute(currentPath)) {
-    return goto(navigationMap['Dashboard'].path, { replaceState: true });
-  } else if (!currentUser && isProtectedRoute(currentPath)) {
+  if (currentUser && isPublicOnlyRoute(currentPath) && action === "SignIn") {
+    return goto(navigationMap['AllChat'].path, { replaceState: true });
+  }
+  else if (currentUser && isPublicOnlyRoute(currentPath) && action === "CreateAccount") {
+    return goto(navigationMap['ZipCode'].path, { replaceState: true });
+  }
+  else if (!currentUser && isProtectedRoute(currentPath)) {
     return goto(navigationMap['Signup'].path, { replaceState: true });
   }
 }

@@ -1,25 +1,75 @@
+// core imports
 import { get, writable } from 'svelte/store';
 import { navigateTo } from '../navigation';
-import {
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { user } from '$lib/stores/authStore';
+import { signInWithCredential } from 'firebase/auth';
+
+// firebase auth imports
+import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithRedirect,
   signInWithPopup,
+  getRedirectResult,
+  signOut,
   GoogleAuthProvider,
-  FacebookAuthProvider,
-  OAuthProvider,
+  FacebookAuthProvider, 
+  OAuthProvider
 } from 'firebase/auth';
-import { auth } from '$lib/utils/firebaseSetup';
+
+// local imports
+import { auth, firestore } from '$lib/utils/firebaseSetup';
 import {
   customValidatePassword,
   displayError,
   validateEmail,
-} from './form-utils';
+  validateDateFields
+} from '$lib/utils/form-utils';
+
+// types
 import type { Auth } from 'firebase/auth';
-import { validateDateFields } from '$lib/utils/form-utils';
-import { signOut } from 'firebase/auth';
-import { user } from '$lib/stores/authStore';
 
 export const currentInputName = writable<string | null>(null);
+
+type UserData = {
+  zipcode?: string;
+  name?: string;
+  birthday?: string;
+  createdAt?: string;
+}
+
+async function upsertUserDoc(userId: string, data: Partial<UserData>) {
+  const userRef = doc(firestore, 'users', userId);
+  const docSnap = await getDoc(userRef);
+  const isNewUser = !docSnap.exists();
+  
+  const docData: UserData = {
+    ...data,
+    ...(isNewUser ? { createdAt: new Date().toISOString() } : {})
+  };
+
+  return setDoc(userRef, docData, { merge: !isNewUser });
+}
+
+async function checkMissingUserInfo(userId: string): Promise<string | null> {
+  const userRef = doc(firestore, 'users', userId);
+  const userDoc = await getDoc(userRef);
+  const data = userDoc.data() as UserData;
+
+  // ordered by signup flow priority
+  const checks: [keyof UserData, string][] = [
+    ['zipcode', '/signup/zipcode'],
+    ['birthday', '/signup/birthday'],
+    ['name', '/signup/name']
+  ];
+
+  for (const [field, route] of checks) {
+    if (!data?.[field]) return route;
+  }
+  
+  return null;
+}
 
 type AuthAction = 'CreateAccount' | 'SignIn';
 
@@ -44,14 +94,11 @@ export async function validateEmailAndPassword(
   auth: Auth,
   passwordVerification?: string
 ): Promise<boolean> {
-  const isEmailValid = validateEmail(email);
-  const isPasswordValid = await customValidatePassword(
-    password,
-    auth,
-    action,
-    passwordVerification
-  );
-  return isEmailValid && isPasswordValid;
+  const [isEmailValid, isPasswordValid] = await Promise.all([
+    validateEmail(email),
+    customValidatePassword(password, auth, action, passwordVerification)
+  ])
+  return isEmailValid && isPasswordValid
 }
 
 export async function handleEmailAuth(
@@ -65,6 +112,7 @@ export async function handleEmailAuth(
   const action = get(authAction);
   authLoading.set(true);
   authError.set(null);
+  
   try {
     const isValid = await validateEmailAndPassword(
       email,
@@ -73,43 +121,30 @@ export async function handleEmailAuth(
       auth,
       passwordVerification
     );
-    if (!isValid) {
-      return; // Exit early if validation fails
-    }
+    if (!isValid) return;
 
-    let success = false;
-    if (action === 'SignIn') {
-      await signInWithEmailAndPassword(auth, email, password);
-      success = true;
-    } else {
-      const missingFields = [];
-      if (!month) missingFields.push('month');
-      if (!day) missingFields.push('day');
-      if (!year) missingFields.push('year');
-
-      if (missingFields.length > 0) {
-        const missingFieldsStr = missingFields.join(', ');
-        const errorMessage = `Missing date information: ${missingFieldsStr}`;
+    if (action === 'CreateAccount') {
+      if (!month || !day || !year) {
+        const errorMessage = 'Missing birthday information';
         console.error(errorMessage);
-        const inputName = get(currentInputName) || missingFields[0];
-        handleError(new Error(errorMessage), inputName);
+        handleError(new Error(errorMessage), 'birthday');
         return;
       }
 
-      success = await createAccount(
-        email,
-        password,
-        month ?? '',
-        day ?? 1,
-        year ?? new Date().getFullYear()
-      );
-    }
+      const success = await createAccountWithEmail(email, password, month, day, year);
+      
+      if (success) {
+        if (!auth.currentUser) {
+          throw new Error('No user found after account creation');
+        }
 
-    if (success) {
-      if (action === 'SignIn') {
-        navigateTo('Dashboard');
-      } else {
-        navigateTo('Onboarding');
+        const nextPage = await checkMissingUserInfo(auth.currentUser.uid);
+        navigateTo(nextPage || 'AllChat');
+      }
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+      if (!auth.currentUser) {
+        throw new Error('No user found after signin');
       }
     }
   } catch (error: unknown) {
@@ -136,9 +171,40 @@ export async function handleSocialLogin(
   authError.set(null);
 
   try {
-    await socialLogin(platform);
-    navigateTo('Dashboard');
+    const providers = {
+      Google: new GoogleAuthProvider(),
+      Facebook: new FacebookAuthProvider(),
+      Apple: new OAuthProvider('apple.com'),
+    };
+
+    const provider = providers[platform];
+    
+    try {
+      // Try popup first
+      await signInWithPopup(auth, provider);
+    } catch (popupError) {
+      console.log("Popup failed, falling back to redirect:", popupError);
+      // If popup fails, fallback to redirect
+      const result = await getRedirectResult(auth);
+      if (result?.user) {
+        const nextPage = await checkMissingUserInfo(result.user.uid);
+        navigateTo(nextPage || 'AllChat');
+        return;
+      }
+      await signInWithRedirect(auth, provider);
+      return;
+    }
+
+    // If popup succeeded, handle navigation
+    if (!auth.currentUser) {
+      console.error('No user found after social login');
+      return;
+    }
+    await createAccountWithSocial();
+    const nextPage = await checkMissingUserInfo(auth.currentUser.uid);
+    navigateTo(nextPage || 'AllChat');
   } catch (error: unknown) {
+    const inputName: string = get(currentInputName) || 'unknown';
     console.error('Social login error:', error);
     if (error instanceof Error) {
       handleError(error, inputName);
@@ -148,19 +214,6 @@ export async function handleSocialLogin(
   } finally {
     authLoading.set(false);
   }
-}
-
-async function socialLogin(
-  platform: 'Facebook' | 'Google' | 'Apple'
-): Promise<void> {
-  const providers = {
-    Google: new GoogleAuthProvider(),
-    Facebook: new FacebookAuthProvider(),
-    Apple: new OAuthProvider('apple.com'),
-  };
-
-  const provider = providers[platform];
-  await signInWithPopup(auth, provider);
 }
 
 export function handleError(error: Error, inputName: string): void {
@@ -177,23 +230,76 @@ export function isAuthLoading(): boolean {
   return get(authLoading);
 }
 
-async function createAccount(
+async function waitForAuthState() {
+  return new Promise<void>((resolve, reject) => {
+    const unsubscribe = auth.onAuthStateChanged(() => {
+      unsubscribe();
+      resolve();
+    });
+
+    setTimeout(() => {
+      unsubscribe();
+      reject(new Error('Auth state timeout'));
+    }, 3000);
+  });
+}
+
+async function createAccountWithSocial() {
+  try {
+    if (!auth.currentUser) {
+      console.error('No authenticated user found');
+      return false;
+    }
+
+    await waitForAuthState();
+
+    // Upsert user document in Firestore
+    await upsertUserDoc(auth.currentUser.uid, {});
+
+    return true;
+  } catch (error) {
+    console.error('Error during account creation process:', error);
+    return false;
+  }
+}
+
+
+async function createAccountWithEmail(
   email: string,
   password: string,
   month: string,
   day: number,
   year: number
 ) {
-  const isDateValid = validateDateFields(month, day, year);
-  if (!isDateValid) {
+  try {
+    // Validate date if provided
+    if (month && day && year) {
+      const isDateValid = validateDateFields(month, day, year);
+      if (!isDateValid) {
+        console.error('Invalid date fields provided:', { month, day, year });
+        return false;
+      }
+    }
+
+    // Create user with email and password
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    // Wait for auth state to settle
+    await waitForAuthState();
+
+    // Optional: birthday field
+    const birthday = month && day && year ? `${year}-${month}-${day}` : null;
+
+    // Upsert user document in Firestore
+    await upsertUserDoc(userCred.user.uid, { birthday: birthday || undefined });
+
+    return true;
+  } catch (error) {
+    console.error('Error during account creation process:', error);
     return false;
   }
-
-  await createUserWithEmailAndPassword(auth, email, password);
-  // Here you might want to store the date of birth information in your user profile
-  // For example: await updateUserProfile(auth.currentUser, { dateOfBirth: `${year}-${month}-${day}` });
-  return true;
 }
+
+
 
 export async function handleSignOut() {
   try {

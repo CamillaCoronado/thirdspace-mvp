@@ -11,7 +11,8 @@ export const protectedRoutes = [
   'Settings',
   "Onboarding",
   "OnboardingMatch",
-  "OnboardingMeet"];
+  "OnboardingMeet",
+  "AllChat"];
 
 export const isPublicOnlyRoute = (path: string) =>
   publicOnlyRoutes.some((route) => path === navigationMap[route].path);
