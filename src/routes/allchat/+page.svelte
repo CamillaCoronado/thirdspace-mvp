@@ -7,23 +7,51 @@
     import { handleSignOut } from '$lib/utils/auth';
     import { doc, getDoc } from "firebase/firestore";
     import { firestore } from '$lib/utils/firebaseSetup';
+    import { onMount } from 'svelte';
+    import { ref, onValue } from "firebase/database";
+    import { db } from '$lib/utils/firebaseSetup'; 
     
     let message: string = '';
     let chatContainer: HTMLDivElement;
+    let activeUsers: number = 0;
+    let isLoading = true;
+
+    onMount(() => {
+        const onlineCountRef = ref(db, 'users');
+        
+        const unsubscribe = onValue(onlineCountRef, (snapshot) => {
+            let onlineCount = 0;
+            snapshot.forEach(childSnapshot => {
+            console.log(childSnapshot.val());
+            if (childSnapshot.val().presence) onlineCount++;
+            });
+            activeUsers = onlineCount;
+            isLoading = false;
+            console.log(`Online users: ${onlineCount}`);
+        });
+
+        // cleanup listener when the component is destroyed
+        return () => unsubscribe();
+    });
+    
     
     async function handleSubmit(): Promise<void> {
         if (!message.trim()) return;
 
         const userRef = doc(firestore, 'users', auth.currentUser?.uid || '');
         const userSnap = await getDoc(userRef);
+        let displayName = 'Anonymous';
 
         let city = 'Not Found! ERROR'; // default value if city isn't found
         if (userSnap.exists()) {
             city = userSnap.data().city || 'Not Found! ERROR'; // use the city from Firestore, fallback to 'SLC'
-        }
+            const name = userSnap.data().name || 'Anonymous';
+            displayName = name;
+        } 
+
 
         sendMessage(message, {
-            displayName: auth.currentUser?.displayName || 'Anonymous',
+            displayName: displayName,
             city: city
         });
         message = '';
@@ -44,7 +72,7 @@
             </div>
             <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
                 <Users class="text-white" size={20} />
-                <span class="text-white text-sm">423 vibing</span>
+                <span class="text-white text-sm"> {activeUsers} vibing</span>
             </div>
         </div>
         <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">

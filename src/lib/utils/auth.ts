@@ -3,7 +3,9 @@ import { get, writable } from 'svelte/store';
 import { navigateTo } from '../navigation';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { user } from '$lib/stores/authStore';
-import { signInWithCredential } from 'firebase/auth';
+import { ref, set } from 'firebase/database';
+import { db } from '$lib/utils/firebaseSetup';
+import { onDisconnect } from 'firebase/database';
 
 // firebase auth imports
 import { 
@@ -232,7 +234,14 @@ export function isAuthLoading(): boolean {
 
 async function waitForAuthState() {
   return new Promise<void>((resolve, reject) => {
-    const unsubscribe = auth.onAuthStateChanged(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        const userId = user.uid;
+        const presenceRef = ref(db, `users/${userId}/presence`);
+        set(presenceRef, true);
+        onDisconnect(presenceRef).set(false);
+      }
+      
       unsubscribe();
       resolve();
     });
@@ -243,6 +252,7 @@ async function waitForAuthState() {
     }, 3000);
   });
 }
+
 
 async function createAccountWithSocial() {
   try {
