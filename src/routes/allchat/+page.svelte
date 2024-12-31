@@ -8,21 +8,36 @@
     import { doc, getDoc } from "firebase/firestore";
     import { firestore } from '$lib/utils/firebaseSetup';
     import { onMount } from 'svelte';
-    import { ref, onValue } from "firebase/database";
+    import { ref, onValue, set } from "firebase/database";
     import { db } from '$lib/utils/firebaseSetup'; 
+    import { onAuthStateChanged } from 'firebase/auth';
     
     let message: string = '';
     let chatContainer: HTMLDivElement;
     let activeUsers: number = 0;
     let isLoading = true;
+    let description = '';
 
     onMount(() => {
+        let currentUserRef: any = null;
+
+        // Listen for authentication state changes
+        const authUnsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+            // Store ref for cleanup
+            currentUserRef = ref(db, `users/${user.uid}/presence`);
+            set(currentUserRef, true);
+            } else if (currentUserRef) {
+            // Only update if we have a stored ref
+            set(currentUserRef, false);
+            }
+        });
+
+        // Listen for the number of online users
         const onlineCountRef = ref(db, 'users');
-        
-        const unsubscribe = onValue(onlineCountRef, (snapshot) => {
+        const presenceUnsubscribe = onValue(onlineCountRef, (snapshot) => {
             let onlineCount = 0;
             snapshot.forEach(childSnapshot => {
-            console.log(childSnapshot.val());
             if (childSnapshot.val().presence) onlineCount++;
             });
             activeUsers = onlineCount;
@@ -30,11 +45,13 @@
             console.log(`Online users: ${onlineCount}`);
         });
 
-        // cleanup listener when the component is destroyed
-        return () => unsubscribe();
+        // Cleanup listeners when the component is destroyed
+        return () => {
+            authUnsubscribe();
+            presenceUnsubscribe();
+        };
     });
-    
-    
+
     async function handleSubmit(): Promise<void> {
         if (!message.trim()) return;
 
@@ -61,6 +78,22 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
     });
+
+    function getTimeBasedDescription() {
+    const hours = new Date().getHours();
+    if (hours < 12) return "Morning Mingle";
+    if (hours < 18) return "Afternoon Session";
+    return "Evening Hangout";
+  }
+
+  // Initial description
+  description = getTimeBasedDescription();
+
+  // Update description every hour (for example)
+  setInterval(() => {
+    description = getTimeBasedDescription();
+  }, 3600000);
+
 </script>
 <div class="flex flex-col h-screen max-h-screen bg-gradient-to-b from-violet-600 to-violet-700">
     <!-- Atmosphere Bar -->
@@ -68,7 +101,9 @@
         <div class="flex items-center gap-3">
             <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
                 <MessageCircle class="text-white" size={20} />
-                <span class="text-white text-sm">Evening Hangout</span>
+                <span class="text-white text-sm">
+                    {description}
+                </span>
             </div>
             <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
                 <Users class="text-white" size={20} />
