@@ -5,15 +5,26 @@
     import { afterUpdate } from 'svelte';
     import Button from '../../components/Button.svelte';
     import { handleSignOut } from '$lib/utils/auth';
+    import { doc, getDoc } from "firebase/firestore";
+    import { firestore } from '$lib/utils/firebaseSetup';
     
     let message: string = '';
     let chatContainer: HTMLDivElement;
     
-    function handleSubmit(): void {
+    async function handleSubmit(): Promise<void> {
         if (!message.trim()) return;
+
+        const userRef = doc(firestore, 'users', auth.currentUser?.uid || '');
+        const userSnap = await getDoc(userRef);
+
+        let city = 'Not Found! ERROR'; // default value if city isn't found
+        if (userSnap.exists()) {
+            city = userSnap.data().city || 'Not Found! ERROR'; // use the city from Firestore, fallback to 'SLC'
+        }
+
         sendMessage(message, {
             displayName: auth.currentUser?.displayName || 'Anonymous',
-            city: 'SLC'
+            city: city
         });
         message = '';
     }

@@ -10,7 +10,7 @@
     import { doc, getDoc, setDoc } from 'firebase/firestore';
   
     let zipcode: string = '';
-    let cityName: string | null = null;
+    let cityName: string | undefined = undefined;
   
     function handleKeyDown(event: KeyboardEvent) {
     const key = event.key;
@@ -22,12 +22,10 @@
     function handleInput(event: Event) {
       const target = event.target as HTMLInputElement;
       zipcode = target.value.replace(/\D/g, '');  // Keep only digits
-      console.log("handling input");
     }
 
     $: if (zipcode.length === 5) {
-      console.log('zipcode changed to', zipcode);
-      lookupCity(zipcode).then(city => cityName = city);
+      lookupCity(zipcode).then(city => cityName = city || undefined);
     }
 
     async function updateUserInfo(userId: string, data: { zipcode?: string, city?: string }) {
@@ -43,7 +41,7 @@
 
   if (zipcode.length === 5) {
     try {
-      await updateUserInfo(auth.currentUser.uid, { zipcode });
+      await updateUserInfo(auth.currentUser.uid, { zipcode, city: cityName });
       // Check if they came from email signup (already have birthday)
       const userRef = doc(firestore, 'users', auth.currentUser.uid);
       const userDoc = await getDoc(userRef);
