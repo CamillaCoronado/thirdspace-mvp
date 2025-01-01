@@ -6,11 +6,13 @@
     export let border = 'border solid';
     export let borderWidth = '1px';
     export let borderColor = 'indigo';
+    export let maxWidth= 'max-w-30';
+    export let width = 'full';
 </script>
 
 <button 
 type = {buttonType}
 on:click
-class={`btn w-full rounded-full py-12 mb-16 ${border} ${borderWidth} ${borderColor} ${bgColor} ${color}`}>
+class={`w-${width} rounded-full py-12 mb-16 ${maxWidth} ${border} ${borderWidth} ${borderColor} ${bgColor} ${color}`}>
     {text}
 </button>

@@ -42,6 +42,9 @@ export default {
         'red': "#FE1D0E",
 
         },
+        backgroundImage: {
+          'purple-gradient': 'linear-gradient(135deg, #6A2AF8, #B483F9)',
+        },
       },
     plugins: [],
   },
