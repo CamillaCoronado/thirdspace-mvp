@@ -20,19 +20,20 @@
     let activeUsers: number = 0;
     let isLoading = true;
     let description = '';
+    let blockRef: HTMLElement;
 
     let isOpen = false;
     let showReactions: boolean[] = [];
+    let prevMessageCount = $messages.length;
     
     const emojis: Emoji[] = ['🤩', '❤️', '😂', '👍', '😡', '👎'];
 
     const toggleMenu = () => {
-    isOpen = !isOpen;
-};
+        isOpen = !isOpen;
+    };
 
     onMount(() => {
         let currentUserRef: any = null;
-
         // Listen for authentication state changes
         const authUnsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -86,9 +87,14 @@
         message = '';
     }
     afterUpdate(() => {
+    if ($messages.length > prevMessageCount) {
+        // New message was added, so scroll to the bottom
         if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+        chatContainer.scrollTop = chatContainer.scrollHeight;
         }
+    }
+    // Update the previous message count to the current length
+    prevMessageCount = $messages.length;
     });
 
     function getTimeBasedDescription() {
@@ -123,13 +129,10 @@
             reaction => reaction.userId === userId && reaction.emoji === emoji
         );
 
-        console.log("existing: " + existingReactionIndex);
-
         if (existingReactionIndex !== -1) {
             message.reactions[existingReactionIndex] = { emoji, userId };
         } else {
             // If no reaction found, add the new reaction
-            console.log("Adding reaction to message with ID:", messageId);
             message.reactions.push({ emoji, userId });
         }
 
@@ -142,7 +145,6 @@
 function sendReactionToBackend(messageId: string, emoji: Emoji, userId: string) {
     const message = $messages.find(msg => msg.id === messageId);
     if (message) {
-        // Remove all reactions by the user and add the new reaction
         message.reactions = [
             ...message.reactions.filter(reaction => reaction.userId !== userId),
             { emoji, userId }
@@ -160,9 +162,8 @@ function sendReactionToBackend(messageId: string, emoji: Emoji, userId: string) 
 function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
     return reactions.filter(reaction => reaction.emoji === emoji).length;
 }
-   
-
 </script>
+
 <div class="flex h-screen max-h-screen bg-white">
     <div class= "w-2/5 relative">
         <div class="bg-indigo p-32 h-[100px] flex justify-between align-items-center">
@@ -217,19 +218,19 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                 <Users class="text-white" size={20} />
                 <span class="text-white text-sm"> {activeUsers} vibing</span>
             </div>
-            <div class="bg-white/10 text-white text-sm backdrop-blur rounded-lg p-2 flex items-center gap-2">
-                <button 
-                    on:click|preventDefault={() => handleSignOut()}
-                >
-                    log out
-            </button>
+            <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
+                <Music class="text-white" size={20} />
+                <span class="text-white text-sm">Lofi Beats</span>
             </div>
-            
         </div>
-        <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
-            <Music class="text-white" size={20} />
-            <span class="text-white text-sm">Lofi Beats</span>
+        <div class="bg-white/10 hover:bg-white/20 transition text-white text-sm backdrop-blur rounded-lg p-2 flex items-center gap-2">
+            <button 
+                on:click|preventDefault={() => handleSignOut()}
+            >
+                log out
+        </button>
         </div>
+        
     </div>
     <!-- Main Chat Space -->
     <div class="flex-1 flex flex-col overflow-hidden">
@@ -247,14 +248,14 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
             {#each $messages as msg, index}
             {#if msg?.user?.name}
                 <div 
-                class="flex gap-3 items-end {msg.user.name !== auth.currentUser?.displayName ? 'justify-end' : ''}">
+                class="pt-7 flex gap-3 items-end {msg.user.name !== auth.currentUser?.displayName ? 'justify-end' : ''}">
         
                 <!-- for current user's messages -->
                 {#if msg.user.name === auth.currentUser?.displayName}
                     <div class="w-8 h-8 rounded-full bg-white/20 flex-shrink-0 backdrop-blur"></div>
                 {/if}
 
-                <div class="{msg.user.name !== auth.currentUser?.displayName ? 'text-right' : 'text-left'}">
+                <div class="{msg.user.name !== auth.currentUser?.displayName ? 'text-right' : 'text-left'} relative">
                     <div 
                         class="flex items-center gap-2 mb-1 {msg.user.name !== auth.currentUser?.displayName ? 'justify-end' : ''}">
                         <span class="text-white/80 text-xs">
@@ -264,44 +265,51 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
 
                     <!-- message bubble -->
                     <div 
-                        class="backdrop-blur rounded-2xl break-words p-5 text-black inline-block
+                        class="backdrop-blur rounded-2xl break-words px-5 py-3 w-3/4 text-left text-black inline-block
                             {msg.user.name !== auth.currentUser?.displayName 
                                 ? 'bg-[#EFD5FC] rounded-tr-sm' 
                                 : 'bg-white rounded-tl-sm'}">
-                        <p class="inline-block">{msg.content}</p>
+                        <p class="inline">{msg.content}</p>
                     </div>
 
                     <!-- emoji reactions -->
-                    <div class="flex gap-2 mt-2 relative">
-                        <button 
-                            class="px-2 py-1 text-sm text-white bg-blue-500 rounded-full"
-                            on:click={() =>  showReactions[index] = !showReactions[index]}
-                            >
-                            Add Reaction
-                        </button>
-                        {#if showReactions[index]}
-                        <div class="grid bg-white absolute p-3 gap-2 mt-2 grid-cols-3">
-                            {#each emojis as emoji}
-                            
-                            <button 
-                                on:click={() => handleReaction(msg.id, emoji, auth.currentUser?.uid  || 'default-user-id')} 
-                                class="px-2 py-1 rounded-full bg-white/10 text-sm text-white hover:bg-white/20 transition">
-                                <span>{emoji}</span>
-                            </button>
-                            {/each}
-                        </div>
-                        {/if}
-                        
-                        <div class="mt-2">
-                            {#each emojis as emoji}
+                    <div class="mt-2">
+                        {#each emojis as emoji}
+                        {#if getReactionCount(msg.reactions, emoji) > 0}
+                        <div class="bg-white/10 backdrop-blur p-2 rounded-md inline-block">
                                 {#if getReactionCount(msg.reactions, emoji) > 0}
                                     <div class="flex items-center gap-2">
                                     <span>{emoji}</span>
                                     <span>{getReactionCount(msg.reactions, emoji)}</span>
                                     </div>
                                 {/if}
-                            {/each}
                         </div>
+                        {/if}
+                        {/each}
+                        {#if showReactions[index]}
+                            <div
+                            class="grid bg-indigo absolute p-3 gap-2 mt-2 grid-cols-3 z-[100] rounded-md bottom-[8px] left-[22px] w-36"
+                            on:blur={() => showReactions[index] = false}
+                            tabindex="-1"
+                            bind:this={blockRef}>
+                                {#each emojis as emoji}
+                                <button 
+                                    on:click={() => {
+                                        handleReaction(msg.id, emoji, auth.currentUser?.uid || 'default-user-id');
+                                        showReactions[index] = false; 
+                                    }}
+                                    class="h-9 w-9 p-1 rounded-full bg-white/10 text-sm text-white hover:bg-white/20 transition">
+                                    <span>{emoji}</span>
+                                </button>
+                                {/each}
+                            </div>
+                        {/if}
+                        <button 
+                            class="rounded-full inline-block align-middle"
+                            on:click={() => showReactions[index] = !showReactions[index]}>
+                            <img class= "inline-block w-5 h-5" src="/add.png" alt="add emoji">
+                        </button>
+                        
                     </div>
                 </div>
                 <!-- for other users' messages -->
@@ -333,7 +341,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
             <form
                 class="gap-2 flex items-center justify-center h-full bg-[#FBF4FF] p-32"
                 on:submit|preventDefault={handleSubmit}
-            ><label class= "text-indigo">☺</label>
+            ><label class= "text-indigo text-2xl">☺</label>
                 <input 
                     type="text"
                     bind:value={message}
