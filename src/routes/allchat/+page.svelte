@@ -3,7 +3,6 @@
     import { messages, sendMessage } from '$lib/stores/chatStore';
     import { auth } from '$lib/utils/firebaseSetup';
     import { afterUpdate } from 'svelte';
-    import Button from '../../components/Button.svelte';
     import { handleSignOut } from '$lib/utils/auth';
     import { doc, getDoc } from "firebase/firestore";
     import { firestore } from '$lib/utils/firebaseSetup';
@@ -11,12 +10,25 @@
     import { ref, onValue, set } from "firebase/database";
     import { db } from '$lib/utils/firebaseSetup'; 
     import { onAuthStateChanged } from 'firebase/auth';
+    import type { Emoji, Reaction } from '$lib/stores/chatStore';
+    import { update } from 'firebase/database';
+
+
     
     let message: string = '';
     let chatContainer: HTMLDivElement;
     let activeUsers: number = 0;
     let isLoading = true;
     let description = '';
+
+    let isOpen = false;
+    let showReactions: boolean[] = [];
+    
+    const emojis: Emoji[] = ['🤩', '❤️', '😂', '👍', '😡', '👎'];
+
+    const toggleMenu = () => {
+    isOpen = !isOpen;
+};
 
     onMount(() => {
         let currentUserRef: any = null;
@@ -101,14 +113,99 @@
     description = getTimeBasedDescription();
   }, 3600000);
 
+  // handle user reaction to a message
+  function handleReaction(messageId: string, emoji: Emoji, userId: string) {
+    const message = $messages.find(msg => msg.id === messageId);
+
+    if (message) {
+        // Find the index of the existing reaction (if any)
+        const existingReactionIndex = message.reactions.findIndex(
+            reaction => reaction.userId === userId && reaction.emoji === emoji
+        );
+
+        console.log("existing: " + existingReactionIndex);
+
+        if (existingReactionIndex !== -1) {
+            message.reactions[existingReactionIndex] = { emoji, userId };
+        } else {
+            // If no reaction found, add the new reaction
+            console.log("Adding reaction to message with ID:", messageId);
+            message.reactions.push({ emoji, userId });
+        }
+
+        // Update the reaction in the backend
+        sendReactionToBackend(messageId, emoji, userId);
+    }
+}
+
+
+function sendReactionToBackend(messageId: string, emoji: Emoji, userId: string) {
+    const message = $messages.find(msg => msg.id === messageId);
+    if (message) {
+        // Remove all reactions by the user and add the new reaction
+        message.reactions = [
+            ...message.reactions.filter(reaction => reaction.userId !== userId),
+            { emoji, userId }
+        ];
+
+        // Update reactions in the backend
+        update(ref(db, `messages/${messageId}`), { reactions: message.reactions })
+            .then(() => console.log(`Reactions updated for message ${messageId}`))
+            .catch((error) => console.error('Error updating reactions:', error));
+    }
+}
+
+
+    // get the count of a specific emoji for a message
+function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
+    return reactions.filter(reaction => reaction.emoji === emoji).length;
+}
+   
+
 </script>
-<div class="flex h-screen max-h-screen bg-medium-indigo">
-    <div class= "sidebar">
-asdsds
+<div class="flex h-screen max-h-screen bg-white">
+    <div class= "w-2/5 relative">
+        <div class="bg-indigo p-32 h-[100px] flex justify-between align-items-center">
+            <figure class= "rounded-full p-3 bg-white h-32 w-32 block"></figure>
+            <div>
+                <!-- hamburger icon -->
+                <button
+                  class="block p-2 focus:outline-none"
+                  on:click={toggleMenu}
+                  aria-label="Toggle Menu"
+                >
+                  <div class="w-6 h-1 bg-white my-1 transition-transform duration-300" 
+                       class:rotate-45={isOpen} 
+                       class:translate-y-2.5={isOpen}></div>
+                  <div class="w-6 h-1 bg-white my-1 transition-opacity duration-300" 
+                       class:opacity-0={isOpen}></div>
+                  <div class="w-6 h-1 bg-white my-1 transition-transform duration-300" 
+                       class:-rotate-45={isOpen} 
+                       class:-translate-y-2.5={isOpen}
+                       class:translate-y-[-6px]={isOpen}></div>
+                </button>
+              
+                <!-- menu items -->
+                <div
+                  class={`z-1 absolute top-[100px] right-0 bottom-0 w-full bg-medium-indigo shadow-md transition-opacity duration-300 ${
+                    isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <a href="/" class="block px-4 py-2 text-white">Settings</a>
+                </div>
+              </div>
+        </div>
+        <div class="p-32 sidebar-section">
+            <div class= "featured-messages">
+                <h3 class= "text-indigo">Featured Messages</h3>
+            </div>
+        </div>
+        
+        
     </div>
     <div class= "bg-purple-gradient w-full flex flex-col h-screen max-h-screen">
          <!-- Atmosphere Bar -->
-    <div class="p-32 flex items-center justify-between">
+    <div class="p-32 flex items-center justify-between bg-medium-purple-gradient h-[100px]">
         <div class="flex items-center gap-3">
             <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
                 <MessageCircle class="text-white" size={20} />
@@ -147,10 +244,11 @@ asdsds
                 </div>
             </div>
             <!-- Chat Messages -->
-            {#each $messages as msg}
-            <div 
+            {#each $messages as msg, index}
+            {#if msg?.user?.name}
+                <div 
                 class="flex gap-3 items-end {msg.user.name !== auth.currentUser?.displayName ? 'justify-end' : ''}">
-                
+        
                 <!-- for current user's messages -->
                 {#if msg.user.name === auth.currentUser?.displayName}
                     <div class="w-8 h-8 rounded-full bg-white/20 flex-shrink-0 backdrop-blur"></div>
@@ -164,22 +262,56 @@ asdsds
                         </span>
                     </div>
 
-                    <!-- Message bubble -->
+                    <!-- message bubble -->
                     <div 
-                        class="backdrop-blur rounded-2xl break-words p-5 text-white
+                        class="backdrop-blur rounded-2xl break-words p-5 text-black inline-block
                             {msg.user.name !== auth.currentUser?.displayName 
-                                ? 'bg-indigo rounded-tr-sm' 
-                                : 'bg-violet-700 rounded-tl-sm'}">
-                        <p>{msg.content}</p>
+                                ? 'bg-[#EFD5FC] rounded-tr-sm' 
+                                : 'bg-white rounded-tl-sm'}">
+                        <p class="inline-block">{msg.content}</p>
+                    </div>
+
+                    <!-- emoji reactions -->
+                    <div class="flex gap-2 mt-2 relative">
+                        <button 
+                            class="px-2 py-1 text-sm text-white bg-blue-500 rounded-full"
+                            on:click={() =>  showReactions[index] = !showReactions[index]}
+                            >
+                            Add Reaction
+                        </button>
+                        {#if showReactions[index]}
+                        <div class="grid bg-white absolute p-3 gap-2 mt-2 grid-cols-3">
+                            {#each emojis as emoji}
+                            
+                            <button 
+                                on:click={() => handleReaction(msg.id, emoji, auth.currentUser?.uid  || 'default-user-id')} 
+                                class="px-2 py-1 rounded-full bg-white/10 text-sm text-white hover:bg-white/20 transition">
+                                <span>{emoji}</span>
+                            </button>
+                            {/each}
+                        </div>
+                        {/if}
+                        
+                        <div class="mt-2">
+                            {#each emojis as emoji}
+                                {#if getReactionCount(msg.reactions, emoji) > 0}
+                                    <div class="flex items-center gap-2">
+                                    <span>{emoji}</span>
+                                    <span>{getReactionCount(msg.reactions, emoji)}</span>
+                                    </div>
+                                {/if}
+                            {/each}
+                        </div>
                     </div>
                 </div>
-
                 <!-- for other users' messages -->
                 {#if msg.user.name !== auth.currentUser?.displayName}
                     <div class="w-8 h-8 rounded-full bg-white/20 flex-shrink-0 backdrop-blur"></div>
                 {/if}
             </div>
+            {/if}
         {/each}
+
 
             <!-- Global Mini-Event
             <div class="flex justify-center">
@@ -199,25 +331,15 @@ asdsds
         <!-- Input Area -->
         <div>
             <form
-                class="gap-2 flex items-center justify-center h-full bg-white p-32"
+                class="gap-2 flex items-center justify-center h-full bg-[#FBF4FF] p-32"
                 on:submit|preventDefault={handleSubmit}
-            >
+            ><label class= "text-indigo">☺</label>
                 <input 
                     type="text"
                     bind:value={message}
-                    placeholder="Add to the conversation..."
-                    class="flex-1 h-full border-indigo border-2 text-indigo placeholder-white/50 px-4 focus:outline-none bg-white/10 backdrop-blur rounded-full p-1"
+                    placeholder="Send a message"
+                    class="flex-1 h-full text-black placeholder-black px-4 focus:outline-none bg-white/10 backdrop-blur rounded-full p-1"
                 />
-                <div class= "w-52 mb-[-16px]">
-                    <Button 
-                        text="Send" 
-                        bgColor="bg-indigo" 
-                        color="text-white" 
-                        buttonType="submit" 
-                        border="border-none" 
-                        borderWidth="0"
-                    />
-                </div>
                 
             </form>
         </div>
