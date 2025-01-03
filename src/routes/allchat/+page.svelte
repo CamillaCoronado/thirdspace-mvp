@@ -1,17 +1,13 @@
 <script lang="ts">
     import { MessageCircle, Music, Users, Sparkles } from 'lucide-svelte';
-    import { messages, sendMessage } from '$lib/stores/chatStore';
-    import { auth } from '$lib/utils/firebaseSetup';
-    import { afterUpdate } from 'svelte';
     import { handleSignOut } from '$lib/utils/auth';
     import { doc, getDoc } from "firebase/firestore";
-    import { firestore } from '$lib/utils/firebaseSetup';
-    import { onMount } from 'svelte';
-    import { ref, onValue, set } from "firebase/database";
-    import { db } from '$lib/utils/firebaseSetup'; 
+    import { onMount, afterUpdate } from 'svelte';
+    import { ref, onValue, set, update } from "firebase/database";
+    import { db, firestore, auth } from '$lib/utils/firebaseSetup'; 
     import { onAuthStateChanged } from 'firebase/auth';
     import type { Emoji, Reaction } from '$lib/stores/chatStore';
-    import { update } from 'firebase/database';
+    import { featuredMessages, messages, sendMessage, getTopReactedMessages } from '$lib/stores/chatStore';
 
 
     
@@ -25,6 +21,7 @@
     let isOpen = false;
     let showReactions: boolean[] = [];
     let prevMessageCount = $messages.length;
+    let interval;
     
     const emojis: Emoji[] = ['🤩', '❤️', '😂', '👍', '😡', '👎'];
 
@@ -33,6 +30,13 @@
     };
 
     onMount(() => {
+        if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+        getTopReactedMessages();  // Initial call to load featured messages
+
+    // Set up an interval to call the function every 5 minutes (300,000 ms)
+        interval = setInterval(getTopReactedMessages, 5 * 60 * 1000); 
         let currentUserRef: any = null;
         // Listen for authentication state changes
         const authUnsubscribe = onAuthStateChanged(auth, (user) => {
@@ -165,7 +169,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
 </script>
 
 <div class="flex h-screen max-h-screen bg-white">
-    <div class= "w-2/5 relative">
+    <div class= "w-2/5 relative h-screen max-h-screen overflow-hidden">
         <div class="bg-indigo p-32 h-[100px] flex justify-between align-items-center">
             <figure class= "rounded-full p-3 bg-white h-32 w-32 block"></figure>
             <div>
@@ -188,17 +192,60 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
               
                 <!-- menu items -->
                 <div
-                  class={`z-1 absolute top-[100px] right-0 bottom-0 w-full bg-medium-indigo shadow-md transition-opacity duration-300 ${
+                  class={`z-[100] absolute top-[100px] right-0 bottom-0 w-full bg-medium-indigo shadow-md transition-opacity duration-300 ${
                     isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
                   }`}
                 >
-                  <a href="/" class="block px-4 py-2 text-white">Settings</a>
+                <div class="bg-white/10 hover:bg-white/20 transition text-white text-sm backdrop-blur rounded-lg p-2 flex items-center gap-2">
+                    <button 
+                    >
+                        settings
+                    </button>
+                </div>                  <div class="bg-white/10 hover:bg-white/20 transition text-white text-sm backdrop-blur rounded-lg p-2 flex items-center gap-2">
+                    <button 
+                        on:click|preventDefault={() => handleSignOut()}
+                    >
+                        log out
+                    </button>
+                </div>
                 </div>
               </div>
         </div>
-        <div class="p-32 sidebar-section">
-            <div class= "featured-messages">
-                <h3 class= "text-indigo">Featured Messages</h3>
+        <div class="bg-indigo px-32 pb-32 sidebar-section overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent h-screen">
+            <div class="flex justify-center mb-32">
+                <div class="bg-white/10 backdrop-blur rounded-lg p-4 max-w-md w-full">
+                    <div class="text-white text-center mb-3">
+                        <span class="font-medium">Community Challenge</span>
+                        <p class="text-sm opacity-80">Share a song that describes your mood today!</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <button class="bg-white/20 rounded-lg px-4 py-2 text-white text-sm hover:bg-white/30 transition-colors">
+                            Share your song
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class= "featured-messages mb-[100px]">
+                <h3 class= "text-white text-center font-medium mb-16">Featured Messages</h3>
+                {#each $featuredMessages as message}
+                <div class="bg-white p-4 rounded-lg shadow-md mb-3 flex flex-col space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="font-semibold text-gray-800">{message.user.name}</span>
+                    <span class="text-sm text-gray-500">• {new Date(message.timestamp).toLocaleTimeString()}</span> <!-- Timestamp (optional) -->
+                  </div>
+                  <p class="text-gray-900">{message.content}</p>
+                  
+                  <!-- Reactions -->
+                  <div class="flex space-x-4 text-sm text-gray-600">
+                    {#each message.reactions as { emoji, userId }, index (emoji)} 
+                      <div class="flex items-center space-x-1">
+                        <span>{emoji}</span>
+                        <span class="text-xs">{message.reactions.filter(reaction => reaction.emoji === emoji).length}</span> <!-- Reaction count -->
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/each}
             </div>
         </div>
         
@@ -218,19 +265,11 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                 <Users class="text-white" size={20} />
                 <span class="text-white text-sm"> {activeUsers} vibing</span>
             </div>
-            <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
-                <Music class="text-white" size={20} />
-                <span class="text-white text-sm">Lofi Beats</span>
-            </div>
         </div>
-        <div class="bg-white/10 hover:bg-white/20 transition text-white text-sm backdrop-blur rounded-lg p-2 flex items-center gap-2">
-            <button 
-                on:click|preventDefault={() => handleSignOut()}
-            >
-                log out
-        </button>
+        <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
+            <Music class="text-white" size={20} />
+            <span class="text-white text-sm">Lofi Beats</span>
         </div>
-        
     </div>
     <!-- Main Chat Space -->
     <div class="flex-1 flex flex-col overflow-hidden">
@@ -320,21 +359,6 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
             {/if}
         {/each}
 
-
-            <!-- Global Mini-Event
-            <div class="flex justify-center">
-                <div class="bg-white/10 backdrop-blur rounded-lg p-4 max-w-md w-full">
-                    <div class="text-white text-center mb-3">
-                        <span class="font-medium">Community Challenge</span>
-                        <p class="text-sm opacity-80">Share a song that describes your mood today!</p>
-                    </div>
-                    <div class="flex justify-center">
-                        <button class="bg-white/20 rounded-lg px-4 py-2 text-white text-sm hover:bg-white/30 transition-colors">
-                            Share your song
-                        </button>
-                    </div>
-                </div>
-            </div>  -->
         </div>
         <!-- Input Area -->
         <div>
@@ -370,4 +394,5 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
     .scrollbar-thin::-webkit-scrollbar-track {
         background: transparent;
     }
+
 </style>
