@@ -10,6 +10,7 @@
     import { doc, getDoc, setDoc } from 'firebase/firestore';
   
     let zipcode: string = '';
+    let cityName: string | undefined = undefined;
   
     function handleKeyDown(event: KeyboardEvent) {
     const key = event.key;
@@ -23,7 +24,11 @@
       zipcode = target.value.replace(/\D/g, '');  // Keep only digits
     }
 
-    async function updateUserInfo(userId: string, data: { zipcode?: string }) {
+    $: if (zipcode.length === 5) {
+      lookupCity(zipcode).then(city => cityName = city || undefined);
+    }
+
+    async function updateUserInfo(userId: string, data: { zipcode?: string, city?: string }) {
       const userRef = doc(firestore, 'users', userId);
       await setDoc(userRef, data, { merge: true });
   }
@@ -36,7 +41,7 @@
 
   if (zipcode.length === 5) {
     try {
-      await updateUserInfo(auth.currentUser.uid, { zipcode });
+      await updateUserInfo(auth.currentUser.uid, { zipcode, city: cityName });
       // Check if they came from email signup (already have birthday)
       const userRef = doc(firestore, 'users', auth.currentUser.uid);
       const userDoc = await getDoc(userRef);
@@ -55,6 +60,37 @@
     alert('Please enter a valid 5-digit zipcode.');
   }
 }
+
+export async function lookupCity(zipcode: string): Promise<string | null> {
+  const API_KEY = import.meta.env.VITE_POSITIONSTACK_API_KEY;
+  
+  try {
+    const response = await fetch(
+      `http://api.positionstack.com/v1/forward?` + 
+      `access_key=${API_KEY}&` +
+      `query=${zipcode}&` +
+      `country=US`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Lookup failed');
+    }
+
+    const data = await response.json();
+    console.log('Raw API response:', data); // for testing
+    
+    if (!data.data?.[0]) {
+      return null;
+    }
+
+    return data.data[0].locality || null;
+    
+  } catch (error) {
+    console.error('City lookup error:', error);
+    return null;
+  }
+}
+
 </script>
 <div class="flex flex-col mx-16 wide-letter">
   <div>
@@ -70,6 +106,17 @@
         placeholder="Zipcode"
         maxLength= {5}
       ></TextInput>
+      {#if zipcode.length === 5}
+        {#if cityName}
+          <div class="text-sm mt-2">
+            {cityName}
+          </div>
+        {:else}
+          <div class="text-sm mt-2">
+            Looking up location...
+          </div>
+        {/if}
+      {/if}
     </div>
     <Button
       text="Next"

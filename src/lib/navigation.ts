@@ -9,6 +9,8 @@ import { pushState } from '$app/navigation';
 import { authLoading } from '$lib/stores/authStore';
 import { isPublicOnlyRoute } from './utils/routeConfig';
 import { isProtectedRoute } from './utils/routeConfig';
+import { getDoc, doc } from 'firebase/firestore';
+import { firestore } from './utils/firebaseSetup';
 
 let isNavigating = false;
 
@@ -58,15 +60,21 @@ export async function navigateToAuthPage() {
 export async function navigateBasedOnAuth() {
   if (get(authLoading)) return;
   const action = getAuthAction();
-
   const currentUser = get(user);
   const currentPath = window.location.pathname;
 
-  if (currentUser && isPublicOnlyRoute(currentPath) && action === "SignIn") {
-    return goto(navigationMap['AllChat'].path, { replaceState: true });
-  }
-  else if (currentUser && isPublicOnlyRoute(currentPath) && action === "CreateAccount") {
-    return goto(navigationMap['ZipCode'].path, { replaceState: true });
+  if (currentUser && isPublicOnlyRoute(currentPath)) {
+    if (action === "SignIn") {
+      return goto(navigationMap['AllChat'].path, { replaceState: true });
+    } else if (action === "CreateAccount") {
+      const userDoc = await getDoc(doc(firestore, 'users', currentUser.uid));
+      return goto(
+        userDoc.exists() && userDoc.data()?.zipcode ? 
+          navigationMap['AllChat'].path : 
+          navigationMap['ZipCode'].path,
+        { replaceState: true }
+      );
+    }
   }
   else if (!currentUser && isProtectedRoute(currentPath)) {
     return goto(navigationMap['Signup'].path, { replaceState: true });
