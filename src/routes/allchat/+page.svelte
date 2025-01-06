@@ -8,9 +8,9 @@
     import { onAuthStateChanged } from 'firebase/auth';
     import type { Emoji, Reaction } from '$lib/stores/chatStore';
     import { featuredMessages, messages, sendMessage, getTopReactedMessages } from '$lib/stores/chatStore';
+    import PhotoPromptModal from '../../components/PhotoPromptModal.svelte';
+    import { hasPhoto } from '$lib/stores/photoStore';
 
-
-    
     let message: string = '';
     let chatContainer: HTMLDivElement;
     let activeUsers: number = 0;
@@ -22,6 +22,10 @@
     let showReactions: boolean[] = [];
     let prevMessageCount = $messages.length;
     let interval;
+    let showModal = false;
+
+    type Action = "Take Photo" | "Upload Photo" | "Cancel";
+
     
     const emojis: Emoji[] = ['🤩', '❤️', '😂', '👍', '😡', '👎'];
 
@@ -154,7 +158,7 @@ function sendReactionToBackend(messageId: string, emoji: Emoji, userId: string) 
             { emoji, userId }
         ];
 
-        // Update reactions in the backend
+        
         update(ref(db, `messages/${messageId}`), { reactions: message.reactions })
             .then(() => console.log(`Reactions updated for message ${messageId}`))
             .catch((error) => console.error('Error updating reactions:', error));
@@ -162,16 +166,16 @@ function sendReactionToBackend(messageId: string, emoji: Emoji, userId: string) 
 }
 
 
-    // get the count of a specific emoji for a message
 function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
     return reactions.filter(reaction => reaction.emoji === emoji).length;
 }
+
 </script>
 
 <div class="flex h-screen max-h-screen bg-white">
     <div class= "w-2/5 relative h-screen max-h-screen overflow-hidden">
         <div class="bg-indigo p-32 h-[100px] flex justify-between align-items-center">
-            <figure class= "rounded-full p-3 bg-white h-32 w-32 block"></figure>
+            <!--<img class= "inline-block w-5 h-5" src={profilePhoto} alt="add emoji">//add this later-->
             <div>
                 <!-- hamburger icon -->
                 <button
@@ -370,11 +374,14 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                     type="text"
                     bind:value={message}
                     placeholder="Send a message"
+                    on:click={() => (hasPhoto() ? (showModal = false) : (showModal = true))}
                     class="flex-1 h-full text-black placeholder-black px-4 focus:outline-none bg-white/10 backdrop-blur rounded-full p-1"
                 />
                 
             </form>
         </div>
+        <PhotoPromptModal bind:isOpen={showModal}
+        />
         </div>
     </div>
 </div>

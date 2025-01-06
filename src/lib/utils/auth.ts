@@ -3,7 +3,6 @@ import { get, writable } from 'svelte/store';
 import { navigateTo } from '../navigation';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { user } from '$lib/stores/authStore';
-import { signInWithCredential } from 'firebase/auth';
 
 // firebase auth imports
 import { 
@@ -15,7 +14,8 @@ import {
   signOut,
   GoogleAuthProvider,
   FacebookAuthProvider, 
-  OAuthProvider
+  OAuthProvider,
+  getAuth
 } from 'firebase/auth';
 
 // local imports
@@ -37,7 +37,14 @@ type UserData = {
   name?: string;
   birthday?: string;
   createdAt?: string;
+  tempPhotoUrl?: string;
+  verifiedPhotoUrl?: string;
 }
+
+export const getUserId = (): string | null => {
+  const auth = getAuth();
+  return auth.currentUser?.uid || null;
+};
 
 async function upsertUserDoc(userId: string, data: Partial<UserData>) {
   const userRef = doc(firestore, 'users', userId);
