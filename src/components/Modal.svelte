@@ -7,13 +7,18 @@
   
   {#if isOpen}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div class="bg-purple-100 rounded-lg shadow-xl max-w-md p-6">
-        <h2 class="text-lg font-semibold text-purple-800">{title}</h2>
-        <p class="mt-2 text-sm text-purple-600">{content}</p>
-        <div class="mt-4 flex justify-end space-x-3">
+      <div class="bg-purple-100 rounded-lg shadow-xl max-w-md p-6 relative">
+        <button class="absolute w-6 h-6 top-[10px] right-[24px]"
+        on:click={() => isOpen = false}>
+            <div class="absolute w-6 h-1 bg-indigo my-1 transition-transform duration-300 rotate-45"></div>
+            <div class="absolute w-6 h-1 bg-indigo my-1 transition-transform duration-300 -rotate-45"></div>
+        </button>
+        <h2 class="mb-2 text-lg font-semibold text-indigo">{title}</h2>
+        <p class="mb-6 text-sm text-indigo inline-block">{content}</p>
+        <div class="flex flex-col justify-end">
           {#each buttons as button}
             <button
-              class={button.class || "bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"}
+              class={button.class || "bg-medium-indigo text-white px-5 py-5 mb-2 rounded hover:bg-indigo"}
               on:click={button.onClick}
             >
               {button.label}
