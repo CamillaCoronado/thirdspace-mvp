@@ -68,7 +68,7 @@ export const navigationMap: Record<
   },
   Settings: {
     path: '/settings',
-    back: 'Profile',
+    //dynamic back
   },
   // Add more routes as needed
 };

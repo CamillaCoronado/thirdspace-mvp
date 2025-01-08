@@ -10,6 +10,7 @@
     import { featuredMessages, messages, sendMessage, getTopReactedMessages } from '$lib/stores/chatStore';
     import PhotoPromptModal from '../../components/PhotoPromptModal.svelte';
     import { hasPhoto } from '$lib/stores/photoStore';
+    import { writable } from 'svelte/store';
 
     let message: string = '';
     let chatContainer: HTMLDivElement;
@@ -18,22 +19,25 @@
     let description = '';
     let blockRef: HTMLElement;
 
-    let isOpen = false;
     let showReactions: boolean[] = [];
     let prevMessageCount = $messages.length;
     let interval;
     let showModal = false;
+    
 
     type Action = "Take Photo" | "Upload Photo" | "Cancel";
 
     
     const emojis: Emoji[] = ['🤩', '❤️', '😂', '👍', '😡', '👎'];
 
+    export const isOpen = writable(false);
+
     const toggleMenu = () => {
-        isOpen = !isOpen;
+        isOpen.update(value => !value);
     };
 
     onMount(() => {
+        window.addEventListener("resize", handleResize);
         if (chatContainer) {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -70,8 +74,13 @@
         return () => {
             authUnsubscribe();
             presenceUnsubscribe();
+            window.removeEventListener("resize", handleResize);
         };
     });
+
+    function handleResize() {
+        isOpen.set(window.innerWidth >= 640);
+    }
 
     async function handleSubmit(): Promise<void> {
         if (!message.trim()) return;
@@ -172,52 +181,18 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
 
 </script>
 
-<div class="flex h-screen max-h-screen bg-white">
-    <div class= "w-2/5 relative h-screen max-h-screen overflow-hidden">
-        <div class="bg-indigo p-32 h-[100px] flex justify-between align-items-center">
-            <!--<img class= "inline-block w-5 h-5" src={profilePhoto} alt="add emoji">//add this later-->
-            <div>
-                <!-- hamburger icon -->
-                <button
-                  class="block p-2 focus:outline-none"
-                  on:click={toggleMenu}
-                  aria-label="Toggle Menu"
-                >
-                  <div class="w-6 h-1 bg-white my-1 transition-transform duration-300" 
-                       class:rotate-45={isOpen} 
-                       class:translate-y-2.5={isOpen}></div>
-                  <div class="w-6 h-1 bg-white my-1 transition-opacity duration-300" 
-                       class:opacity-0={isOpen}></div>
-                  <div class="w-6 h-1 bg-white my-1 transition-transform duration-300" 
-                       class:-rotate-45={isOpen} 
-                       class:-translate-y-2.5={isOpen}
-                       class:translate-y-[-6px]={isOpen}></div>
-                </button>
-              
-                <!-- menu items -->
-                <div
-                  class={`z-[100] absolute top-[100px] right-0 bottom-0 w-full bg-medium-indigo shadow-md transition-opacity duration-300 ${
-                    isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                  }`}
-                >
-                <div class="bg-white/10 hover:bg-white/20 transition text-white text-sm backdrop-blur rounded-lg p-2 flex items-center gap-2">
-                    <button 
-                    >
-                        settings
-                    </button>
-                </div>                  <div class="bg-white/10 hover:bg-white/20 transition text-white text-sm backdrop-blur rounded-lg p-2 flex items-center gap-2">
-                    <button 
-                        on:click|preventDefault={() => handleSignOut()}
-                    >
-                        log out
-                    </button>
-                </div>
-                </div>
-              </div>
-        </div>
-        <div class="bg-indigo px-32 pb-32 sidebar-section overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent h-screen">
-            <div class="flex justify-center mb-32">
-                <div class="bg-white/10 backdrop-blur rounded-lg p-4 max-w-md w-full">
+<div class="flex h-screen max-h-screen">
+    <div
+    class={`transition-transform duration-500 overflow-y-auto max-sm:w-full bg-indigo scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent ease-in-out ${
+        $isOpen
+          ? 'pointer-events-auto z-[100] fixed top-0 left-0 bottom-0 translate-x-0'
+          : 'pointer-events-none z-[100] fixed top-0 left-0 bottom-0 -translate-x-full'
+      } sm:pointer-events-auto sm:z-auto sm:static sm:translate-x-0 sm:max-w-2/5`}
+      >
+        <!--<img class= "inline-block w-5 h-5" src={profilePhoto} alt="add emoji">//add this later-->
+        <div class="p-3.5">
+            <div class="flex justify-center mb-32 mt-64 sm:mt-32">
+                <div class="bg-white/10 rounded-lg p-3.5 max-w-md w-full">
                     <div class="text-white text-center mb-3">
                         <span class="font-medium">Community Challenge</span>
                         <p class="text-sm opacity-80">Share a song that describes your mood today!</p>
@@ -229,7 +204,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                     </div>
                 </div>
             </div>
-            <div class= "featured-messages mb-[100px]">
+            <div class= "featured-messages mb-2">
                 <h3 class= "text-white text-center font-medium mb-16">Featured Messages</h3>
                 {#each $featuredMessages as message}
                 <div class="bg-white p-4 rounded-lg shadow-md mb-3 flex flex-col space-y-2">
@@ -251,6 +226,21 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                 </div>
               {/each}
             </div>
+            <div class="mb-2 bg-white/10 hover:bg-white/20 transition text-white text-sm rounded-lg p-2 flex items-center gap-2">
+                <button
+                class="w-full" 
+                >
+                    settings
+                </button>
+            </div>
+            <div class="mb-2 bg-white/10 hover:bg-white/20 transition text-white text-sm rounded-lg p-2 flex items-center gap-2">
+                <button
+                class="w-full" 
+                    on:click|preventDefault={() => handleSignOut()}
+                >
+                    log out
+                </button>
+            </div>
         </div>
         
         
@@ -258,21 +248,37 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
     <div class= "bg-purple-gradient w-full flex flex-col h-screen max-h-screen">
          <!-- Atmosphere Bar -->
     <div class="p-32 flex items-center justify-between bg-medium-purple-gradient h-[100px]">
+        <div class="block sm:hidden z-[101]">
+            <!-- hamburger icon -->
+            <button
+              class="block p-2 focus:outline-none"
+              on:click={toggleMenu}
+              aria-label="Toggle Menu"
+            >
+              <div class="w-6 h-1 bg-white my-1 transition-transform duration-300" 
+                   class:rotate-45={$isOpen} 
+                   class:translate-y-2.5={$isOpen}></div>
+              <div class="w-6 h-1 bg-white my-1 transition-opacity duration-300" 
+                   class:opacity-0={$isOpen}></div>
+              <div class="w-6 h-1 bg-white my-1 transition-transform duration-300" 
+                   class:-rotate-45={$isOpen} 
+                   class:-translate-y-2.5={$isOpen}
+                   class:translate-y-[-6px]={$isOpen}></div>
+            </button>
+          </div>
         <div class="flex items-center gap-3">
-            <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
+            <div class="bg-white/10 rounded-lg p-2 flex items-center gap-2">
                 <MessageCircle class="text-white" size={20} />
                 <span class="text-white text-sm">
                     {description}
                 </span>
             </div>
-            <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
-                <Users class="text-white" size={20} />
-                <span class="text-white text-sm"> {activeUsers} vibing</span>
+            <div class="bg-white/10 rounded-lg p-2 flex items-center gap-2">
+                <Users class="text-white" size={20} /><span class="text-white text-sm"> {activeUsers}</span>
             </div>
         </div>
-        <div class="bg-white/10 backdrop-blur rounded-lg p-2 flex items-center gap-2">
+        <div class="bg-white/10 rounded-lg p-2 flex items-center gap-2">
             <Music class="text-white" size={20} />
-            <span class="text-white text-sm">Lofi Beats</span>
         </div>
     </div>
     <!-- Main Chat Space -->
@@ -282,7 +288,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
             class="flex-1 mb-5 overflow-y-auto p-32 space-y-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
             <!-- Current Vibe Indicator -->
             <div class="flex justify-center">
-                <div class="bg-white/10 backdrop-blur rounded-lg px-4 py-2 text-white text-sm flex items-center gap-2">
+                <div class="bg-white/10 rounded-lg px-4 py-2 text-white text-sm flex items-center gap-2">
                     <Sparkles size={16} />
                     The chat is buzzing! 12 new people just joined
                 </div>
@@ -295,7 +301,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
         
                 <!-- for current user's messages -->
                 {#if msg.user.name === auth.currentUser?.displayName}
-                    <div class="w-8 h-8 rounded-full bg-white/20 flex-shrink-0 backdrop-blur"></div>
+                    <div class="w-8 h-8 rounded-full bg-white/20 flex-shrink-0"></div>
                 {/if}
 
                 <div class="{msg.user.name !== auth.currentUser?.displayName ? 'text-right' : 'text-left'} relative">
@@ -308,7 +314,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
 
                     <!-- message bubble -->
                     <div 
-                        class="backdrop-blur rounded-2xl break-words px-5 py-3 w-3/4 text-left text-black inline-block
+                        class="rounded-2xl break-words px-5 py-3 w-3/4 text-left text-black inline-block
                             {msg.user.name !== auth.currentUser?.displayName 
                                 ? 'bg-[#EFD5FC] rounded-tr-sm' 
                                 : 'bg-white rounded-tl-sm'}">
@@ -319,7 +325,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                     <div class="mt-2">
                         {#each emojis as emoji}
                         {#if getReactionCount(msg.reactions, emoji) > 0}
-                        <div class="bg-white/10 backdrop-blur p-2 rounded-md inline-block">
+                        <div class="bg-white/10 p-2 rounded-md inline-block">
                                 {#if getReactionCount(msg.reactions, emoji) > 0}
                                     <div class="flex items-center gap-2">
                                     <span>{emoji}</span>
@@ -357,7 +363,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                 </div>
                 <!-- for other users' messages -->
                 {#if msg.user.name !== auth.currentUser?.displayName}
-                    <div class="w-8 h-8 rounded-full bg-white/20 flex-shrink-0 backdrop-blur"></div>
+                    <div class="w-8 h-8 rounded-full bg-white/20 flex-shrink-0"></div>
                 {/if}
             </div>
             {/if}
@@ -375,15 +381,15 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                     bind:value={message}
                     placeholder="Send a message"
                     on:click={() => (hasPhoto() ? (showModal = false) : (showModal = true))}
-                    class="flex-1 h-full text-black placeholder-black px-4 focus:outline-none bg-white/10 backdrop-blur rounded-full p-1"
+                    class="flex-1 h-full text-black placeholder-black px-4 focus:outline-none bg-white/10 rounded-full p-1"
                 />
                 
             </form>
         </div>
-        <PhotoPromptModal bind:isOpen={showModal}
-        />
         </div>
     </div>
+    <PhotoPromptModal bind:isOpen={showModal}
+        />
 </div>
 <style lang="postcss">
     /* Custom scrollbar for WebKit browsers */
