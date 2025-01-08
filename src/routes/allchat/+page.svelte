@@ -190,7 +190,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
       } sm:pointer-events-auto sm:z-auto sm:static sm:translate-x-0 sm:max-w-2/5`}
       >
         <!--<img class= "inline-block w-5 h-5" src={profilePhoto} alt="add emoji">//add this later-->
-        <div class="p-32">
+        <div class="p-3.5">
             <div class="flex justify-center mb-32 mt-64 sm:mt-32">
                 <div class="bg-white/10 rounded-lg p-3.5 max-w-md w-full">
                     <div class="text-white text-center mb-3">
@@ -227,13 +227,15 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
               {/each}
             </div>
             <div class="mb-2 bg-white/10 hover:bg-white/20 transition text-white text-sm rounded-lg p-2 flex items-center gap-2">
-                <button 
+                <button
+                class="w-full" 
                 >
                     settings
                 </button>
             </div>
             <div class="mb-2 bg-white/10 hover:bg-white/20 transition text-white text-sm rounded-lg p-2 flex items-center gap-2">
-                <button 
+                <button
+                class="w-full" 
                     on:click|preventDefault={() => handleSignOut()}
                 >
                     log out
