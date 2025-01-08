@@ -37,7 +37,6 @@
     };
 
     onMount(() => {
-        handleResize();
         window.addEventListener("resize", handleResize);
         if (chatContainer) {
         chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -184,7 +183,7 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
 
 <div class="flex h-screen max-h-screen">
     <div
-    class={`transition-transform duration-500 overflow-y-auto bg-indigo scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent ease-in-out w-full ${
+    class={`transition-transform duration-500 overflow-y-auto max-sm:w-full bg-indigo scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent ease-in-out ${
         $isOpen
           ? 'pointer-events-auto z-[100] fixed top-0 left-0 bottom-0 translate-x-0'
           : 'pointer-events-none z-[100] fixed top-0 left-0 bottom-0 -translate-x-full'
@@ -385,10 +384,10 @@ function getReactionCount(reactions: Reaction[], emoji: Emoji): number {
                 
             </form>
         </div>
-        <PhotoPromptModal bind:isOpen={showModal}
-        />
         </div>
     </div>
+    <PhotoPromptModal bind:isOpen={showModal}
+        />
 </div>
 <style lang="postcss">
     /* Custom scrollbar for WebKit browsers */
