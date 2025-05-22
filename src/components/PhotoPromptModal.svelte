@@ -2,20 +2,38 @@
   import Modal from "./Modal.svelte";
   import { setTempPhotoUrl, setVerifiedPhotoUrl } from "$lib/stores/photoStore";
   import { getUserId } from "$lib/utils/auth";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
   export let isOpen: boolean = false;
 
-  // Handle uploading a temporary or verified photo
-  function handleUploadPhoto(isVerified: boolean) {
-    const photoUrl = "https://example.com/photo.jpg"; // Simulate an uploaded photo URL
-    const userId = getUserId() || undefined;
-    if (userId) {
-        if (isVerified) {
-            setVerifiedPhotoUrl(userId, photoUrl);
-        } else {
-            setTempPhotoUrl(userId, photoUrl);
-        }
-    }
+  async function handleUploadPhoto(isVerified: boolean) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      const userId = getUserId();
+      if (!userId) return;
+
+      const storage = getStorage();
+      const path = isVerified ? `verified/${userId}` : `temp/${userId}`;
+      const fileRef = ref(storage, path);
+
+      await uploadBytes(fileRef, file);
+      const photoUrl = await getDownloadURL(fileRef);
+
+      if (isVerified) {
+        setVerifiedPhotoUrl(userId, photoUrl);
+      } else {
+        setTempPhotoUrl(userId, photoUrl);
+      }
+
+      isOpen = false;
+    };
   }
 </script>
 
